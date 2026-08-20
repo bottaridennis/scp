@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --color-scp-red: #dc2626; /* match tailwind red-600 */
+  --color-scp-dark: #0c0c0c;
+  --color-scp-header: #111111;
+  --color-scp-paper: #0c0c0c;
+  --color-scp-paper-light: #0f0f0f;
+  --color-scp-border: #333333;
+  --color-scp-text: #d4d4d4;
+  --color-scp-muted: #666666;
+}
+
+body {
+  background-color: var(--color-scp-dark);
+  color: var(--color-scp-text);
+  overflow-x: hidden;
+}
+
+.grid-bg {
+  background-image: linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
+  background-size: 20px 20px;
+}
+
+.redacted {
+  background-color: #d4d4d4;
+  color: transparent;
+  padding: 0 2px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-scp-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-scp-border);
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scp-muted);
+}

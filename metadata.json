@@ -1,0 +1,6 @@
+{
+  "name": "SCP Foundation Archival Database",
+  "description": "A modernized, graphically improved replica of the SCP Foundation Wiki.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
