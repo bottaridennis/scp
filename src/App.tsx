@@ -90,25 +90,26 @@ export default function App() {
   }, [page, allItems]);
 
   return (
-    <div className="h-screen bg-[#0c0c0c] text-[#d4d4d4] flex flex-col font-sans overflow-hidden antialiased selection:bg-red-600 selection:text-white">
+    <div className="h-screen bg-slate-100 text-slate-900 flex flex-col font-sans overflow-hidden antialiased selection:bg-red-700 selection:text-white">
       <Header 
         isMobileMenuOpen={isMobileMenuOpen} 
         onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
         onSearch={handleSearch}
+        onHomeClick={() => setPage({ type: 'home' })}
       />
       
       <div className="flex-1 flex overflow-hidden relative">
         
         {/* Mobile Navigation overlay */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 bg-black/80 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="fixed inset-0 bg-slate-900/80 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
         )}
 
         {/* Sidebar */}
         <Sidebar 
           className={`
             absolute lg:static top-0 left-0 h-full
-            w-64 bg-[#0f0f0f] z-50
+            w-72 bg-slate-50 z-50
             transform transition-transform duration-300 ease-in-out
             ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           `}
@@ -142,9 +143,9 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="h-10 bg-[#111] border-t border-[#333] flex items-center justify-between px-6 text-[10px] text-[#444] font-mono shrink-0">
-        <p>Contenuti derivati dalla SCP Foundation e distribuiti secondo licenza CC BY-SA 3.0. Questo progetto non è affiliato ufficialmente alla SCP Foundation.</p>
-        <p>LATENCY: 14MS // USER: RAISA_ADMIN</p>
+      <footer className="h-10 bg-white border-t border-slate-300 flex items-center justify-between px-6 text-[10px] text-slate-500 font-mono shrink-0 no-print">
+        <p>Contenuti derivati dalla SCP Foundation e distribuiti secondo licenza CC BY-SA 3.0.</p>
+        <p className="hidden md:block">SECURE INTRANET // SITE-19_TERMINAL</p>
       </footer>
     </div>
   );

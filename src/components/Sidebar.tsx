@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { Bookmark, Home, BookOpen, AlertCircle, FileText } from 'lucide-react';
 
 const NAV_DATA = [
   {
@@ -38,23 +38,38 @@ interface SidebarProps {
 
 export default function Sidebar({ className = "", onLinkClick }: SidebarProps) {
   return (
-    <aside className={`w-full lg:w-64 flex-shrink-0 flex flex-col bg-[#0f0f0f] border-r border-[#333] ${className}`}>
-      <div className="p-6 space-y-8 flex-1 overflow-y-auto">
+    <aside className={`w-full lg:w-64 flex-shrink-0 flex flex-col bg-slate-50 border-r border-slate-300 no-print ${className}`}>
+      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
         
         {/* Navigation block */}
         <section>
-          <h2 className="text-[10px] text-[#666] font-bold uppercase tracking-widest mb-4">
+          <h2 className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">
             Main Directive
           </h2>
-          <ul className="space-y-3 text-xs font-medium">
-            <li className="flex justify-between hover:text-white cursor-pointer" onClick={() => onLinkClick?.('home')}>
-              <span>[HOME]</span>
+          <ul className="space-y-1 text-sm font-sans font-medium">
+            <li>
+              <button 
+                onClick={() => onLinkClick?.('home')} 
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded transition-colors text-left"
+              >
+                <Home size={16} /> Dashboard
+              </button>
             </li>
-            <li className="flex justify-between hover:text-white cursor-pointer" onClick={() => onLinkClick?.('favorites')}>
-              <span>[FAVORITES]</span>
+            <li>
+              <button 
+                onClick={() => onLinkClick?.('favorites')}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded transition-colors text-left"
+              >
+                <Bookmark size={16} /> Saved Files
+              </button>
             </li>
-            <li className="flex justify-between hover:text-white cursor-pointer" onClick={() => onLinkClick?.('scp-173')}>
-              <span className="text-red-500 font-bold">[SCP-173]</span>
+            <li>
+              <button 
+                onClick={() => onLinkClick?.('scp-173')}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-red-700 hover:bg-red-50 hover:text-red-800 rounded transition-colors text-left"
+              >
+                <AlertCircle size={16} /> Priority: SCP-173
+              </button>
             </li>
           </ul>
         </section>
@@ -62,13 +77,19 @@ export default function Sidebar({ className = "", onLinkClick }: SidebarProps) {
         {/* Dynamic Nav Data */}
         {NAV_DATA.map((section, idx) => (
           <section key={idx}>
-            <h2 className="text-[10px] text-[#666] font-bold uppercase tracking-widest mb-4">
+            <h2 className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">
               {section.category}
             </h2>
-            <ul className="space-y-3 text-xs font-medium opacity-70">
+            <ul className="space-y-1 text-sm font-sans opacity-90">
               {section.items.map((item, idy) => (
-                <li key={idy} onClick={() => onLinkClick?.(`${item.action}:${item.label}`)} className="hover:text-white hover:opacity-100 cursor-pointer">
-                  {item.label.toUpperCase()}
+                <li key={idy}>
+                  <button 
+                    onClick={() => onLinkClick?.(`${item.action}:${item.label}`)}
+                    className="w-full flex items-center gap-2 px-2 py-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition-colors text-left"
+                  >
+                    <FileText size={14} className="opacity-50" />
+                    {item.label}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -76,9 +97,11 @@ export default function Sidebar({ className = "", onLinkClick }: SidebarProps) {
         ))}
       </div>
       
-      <div className="mt-auto p-6 border-t border-[#333]">
-        <div className="bg-red-900/10 border border-red-900/40 p-3 rounded text-[10px] text-red-500 font-mono leading-tight">
-          WARNING: DATA BREACH DETECTED IN SECTOR 4-B.
+      <div className="mt-auto p-4 border-t border-slate-300 bg-slate-100">
+        <div className="border border-slate-300 p-3 bg-white text-[10px] text-slate-600 font-mono leading-relaxed relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-red-600"></div>
+          <strong>SYSTEM STATUS</strong><br/>
+          No active breaches detected.
         </div>
       </div>
     </aside>

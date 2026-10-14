@@ -31,11 +31,13 @@ export const normalizeScpItem = (id: string, raw: any): SCPItem => ({
 let metadataCache: SCPItem[] | null = null;
 const contentCache: Record<string, string> = {};
 
+const API_BASE = import.meta.env.DEV ? '/scp-api' : 'https://scp-data.tedivm.com';
+
 export async function fetchScpMetadata(): Promise<SCPItem[]> {
   if (metadataCache) return metadataCache;
 
   try {
-    const res = await fetch('/scp-api/data/scp/items/index.json');
+    const res = await fetch(`${API_BASE}/data/scp/items/index.json`);
     if (!res.ok) throw new Error('Network response was not ok');
     const data = await res.json();
     
@@ -67,9 +69,9 @@ export async function fetchScpContent(scpItem: SCPItem): Promise<string> {
   }
 
   try {
-    let url = `/scp-api/data/scp/items/content_index.json`;
+    let url = `${API_BASE}/data/scp/items/content_index.json`;
     if (scpItem.contentFile) {
-      url = `/scp-api/data/scp/items/${scpItem.contentFile}`;
+      url = `${API_BASE}/data/scp/items/${scpItem.contentFile}`;
     }
 
     const res = await fetch(url);
@@ -188,6 +190,38 @@ export function toggleFavorite(id: string): string[] {
   }
   saveFavorites(newFavs);
   return newFavs;
+}
+
+export const HISTORY_STORAGE_KEY = "scp-history";
+
+export function getHistory(): string[] {
+  try {
+    const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (err) {
+    console.error("Error reading history", err);
+  }
+  return [];
+}
+
+export function addHistory(id: string) {
+  const history = getHistory();
+  const index = history.indexOf(id);
+  if (index >= 0) {
+    history.splice(index, 1);
+  }
+  history.unshift(id); // Add to front
+  // Keep only last 50
+  if (history.length > 50) {
+    history.length = 50;
+  }
+  try {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+  } catch (err) {
+    console.error("Error saving history", err);
+  }
 }
 
 export function isFavorite(id: string): boolean {

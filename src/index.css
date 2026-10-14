@@ -1,17 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
-  --color-scp-red: #dc2626; /* match tailwind red-600 */
-  --color-scp-dark: #0c0c0c;
-  --color-scp-header: #111111;
-  --color-scp-paper: #0c0c0c;
-  --color-scp-paper-light: #0f0f0f;
-  --color-scp-border: #333333;
-  --color-scp-text: #d4d4d4;
-  --color-scp-muted: #666666;
+  --font-serif: "PT Serif", serif;
+  --color-scp-red: #B91C1C; /* Darker red */
+  --color-scp-dark: #f8fafc; /* Very light slate */
+  --color-scp-header: #ffffff;
+  --color-scp-paper: #ffffff;
+  --color-scp-paper-light: #f1f5f9;
+  --color-scp-border: #cbd5e1;
+  --color-scp-text: #0f172a; /* Slate 900 */
+  --color-scp-muted: #64748b; /* Slate 500 */
 }
 
 body {
@@ -21,17 +22,29 @@ body {
 }
 
 .grid-bg {
-  background-image: linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
+  /* Subtle light grid */
+  background-image: linear-gradient(rgba(0,0,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.03) 1px,transparent 1px);
   background-size: 20px 20px;
 }
 
+/* Redacted style - black marker over text */
 .redacted {
-  background-color: #d4d4d4;
-  color: transparent;
-  padding: 0 2px;
+  background-color: #0f172a;
+  color: #0f172a;
+  padding: 0 4px;
+  border-radius: 2px;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  display: inline-block;
+  transform: skew(-2deg);
+}
+.redacted:hover {
+  /* No hover effect, it's classified */
+  color: #0f172a;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - lighter */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -39,9 +52,19 @@ body {
   background: var(--color-scp-dark);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-scp-border);
-  border-radius: 0px;
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-scp-muted);
+  background: #94a3b8;
+}
+
+/* Print specific styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
 }
