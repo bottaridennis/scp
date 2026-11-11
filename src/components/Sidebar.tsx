@@ -1,109 +1,112 @@
-import { Bookmark, Home, BookOpen, AlertCircle, FileText } from 'lucide-react';
-
-const NAV_DATA = [
-  {
-    category: "Database Archives",
-    items: [
-      { label: "Series IX (8000-8999)", action: 'range:8000:8999' },
-      { label: "Series VIII (7000-7999)", action: 'range:7000:7999' },
-      { label: "Series VII (6000-6999)", action: 'range:6000:6999' },
-      { label: "Series VI (5000-5999)", action: 'range:5000:5999' },
-      { label: "Series V (4000-4999)", action: 'range:4000:4999' },
-      { label: "Series IV (3000-3999)", action: 'range:3000:3999' },
-      { label: "Series III (2000-2999)", action: 'range:2000:2999' },
-      { label: "Series II (1000-1999)", action: 'range:1000:1999' },
-      { label: "Series I (001-999)", action: 'range:1:999' }
-    ]
-  },
-  {
-    category: "Library",
-    items: [
-      { label: "Joke SCPs", action: 'tag:joke' },
-      { label: "Archived SCPs", action: 'tag:archived' },
-      { label: "SCP-EX", action: 'tag:explained' }
-    ]
-  },
-  {
-    category: "Tales",
-    items: [
-      { label: "Foundation Tales", action: 'tag:tale' }
-    ]
-  }
-];
+import type { ReactNode } from 'react';
+import { Archive, Bookmark, Home, Shuffle } from 'lucide-react';
+import type { Route } from '../lib/router';
+import { href } from '../lib/router';
+import { NUMBERED_SERIES, OBJECT_CLASSES, SPECIAL_SERIES } from '../lib/scp';
 
 interface SidebarProps {
-  className?: string;
-  onLinkClick?: (page: string) => void;
+  route: Route;
+  counts: Record<string, number>;
+  classCounts: Record<string, number>;
+  savedCount: number;
+  onRandom: () => void;
+  onNavigate: () => void;
 }
 
-export default function Sidebar({ className = "", onLinkClick }: SidebarProps) {
+function NavLink({
+  to,
+  active,
+  children,
+  count,
+  onClick,
+}: {
+  to: string;
+  active: boolean;
+  children: ReactNode;
+  count?: number;
+  onClick: () => void;
+}) {
   return (
-    <aside className={`w-full lg:w-64 flex-shrink-0 flex flex-col bg-slate-50 border-r border-slate-300 no-print ${className}`}>
-      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
-        
-        {/* Navigation block */}
-        <section>
-          <h2 className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">
-            Main Directive
-          </h2>
-          <ul className="space-y-1 text-sm font-sans font-medium">
-            <li>
-              <button 
-                onClick={() => onLinkClick?.('home')} 
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded transition-colors text-left"
-              >
-                <Home size={16} /> Dashboard
-              </button>
-            </li>
-            <li>
-              <button 
-                onClick={() => onLinkClick?.('favorites')}
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200 rounded transition-colors text-left"
-              >
-                <Bookmark size={16} /> Saved Files
-              </button>
-            </li>
-            <li>
-              <button 
-                onClick={() => onLinkClick?.('scp-173')}
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-red-700 hover:bg-red-50 hover:text-red-800 rounded transition-colors text-left"
-              >
-                <AlertCircle size={16} /> Priority: SCP-173
-              </button>
-            </li>
-          </ul>
-        </section>
+    <a
+      href={to}
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      className={`group flex items-center gap-2.5 px-3 py-1.5 text-[13.5px] transition-colors ${
+        active ? 'bg-ink text-bg' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
+      }`}
+    >
+      {children}
+      {count !== undefined && count > 0 && (
+        <span className={`ml-auto font-mono text-[10px] ${active ? 'text-bg/70' : 'text-muted'}`}>{count}</span>
+      )}
+    </a>
+  );
+}
 
-        {/* Dynamic Nav Data */}
-        {NAV_DATA.map((section, idx) => (
-          <section key={idx}>
-            <h2 className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">
-              {section.category}
-            </h2>
-            <ul className="space-y-1 text-sm font-sans opacity-90">
-              {section.items.map((item, idy) => (
-                <li key={idy}>
-                  <button 
-                    onClick={() => onLinkClick?.(`${item.action}:${item.label}`)}
-                    className="w-full flex items-center gap-2 px-2 py-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded transition-colors text-left"
-                  >
-                    <FileText size={14} className="opacity-50" />
-                    {item.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section>
+      <h2 className="kicker mb-2 px-3">{title}</h2>
+      <div className="space-y-px">{children}</div>
+    </section>
+  );
+}
+
+export default function Sidebar({ route, counts, classCounts, savedCount, onRandom, onNavigate }: SidebarProps) {
+  const is = (name: Route['name'], key?: string) =>
+    route.name === name &&
+    (key === undefined ||
+      (route.name === 'series' && route.key === key) ||
+      (route.name === 'class' && route.key === key));
+
+  return (
+    <nav aria-label="Navigazione archivio" className="space-y-7 px-3 py-6">
+      <Section title="Terminale">
+        <NavLink to={href.home()} active={is('home')} onClick={onNavigate}>
+          <Home size={15} /> Dashboard
+        </NavLink>
+        <NavLink to={href.archive()} active={is('archive')} onClick={onNavigate}>
+          <Archive size={15} /> Archivio completo
+        </NavLink>
+        <NavLink to={href.saved()} active={is('saved')} count={savedCount} onClick={onNavigate}>
+          <Bookmark size={15} /> Dossier salvati
+        </NavLink>
+        <button
+          onClick={() => {
+            onRandom();
+            onNavigate();
+          }}
+          className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[13.5px] text-accent hover:bg-accent-soft"
+        >
+          <Shuffle size={15} /> Dossier casuale
+        </button>
+      </Section>
+
+      <Section title="Serie">
+        {NUMBERED_SERIES.map((s) => (
+          <NavLink key={s.key} to={href.series(s.key)} active={is('series', s.key)} count={counts[s.key]} onClick={onNavigate}>
+            <span className="w-7 font-mono text-[11px] font-bold">{s.short}</span>
+            <span className="font-mono text-[11.5px]">{s.range}</span>
+          </NavLink>
         ))}
-      </div>
-      
-      <div className="mt-auto p-4 border-t border-slate-300 bg-slate-100">
-        <div className="border border-slate-300 p-3 bg-white text-[10px] text-slate-600 font-mono leading-relaxed relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-red-600"></div>
-          <strong>SYSTEM STATUS</strong><br/>
-          No active breaches detected.
-        </div>
-      </div>
-    </aside>
+      </Section>
+
+      <Section title="Collezioni">
+        {SPECIAL_SERIES.map((s) => (
+          <NavLink key={s.key} to={href.series(s.key)} active={is('series', s.key)} count={counts[s.key]} onClick={onNavigate}>
+            {s.label}
+          </NavLink>
+        ))}
+      </Section>
+
+      <Section title="Classi d'oggetto">
+        {OBJECT_CLASSES.filter((c) => c.key !== 'explained' && c.key !== 'decommissioned').map((c) => (
+          <NavLink key={c.key} to={href.objectClass(c.key)} active={is('class', c.key)} count={classCounts[c.key]} onClick={onNavigate}>
+            <span className="size-2 rounded-full" style={{ background: c.color }} />
+            {c.label}
+          </NavLink>
+        ))}
+      </Section>
+    </nav>
   );
 }

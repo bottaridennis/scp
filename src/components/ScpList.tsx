@@ -1,166 +1,290 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { FileText, Bookmark, ArrowUp, ArrowDown, Star } from 'lucide-react';
-import { SCPItem, isFavorite, toggleFavorite } from '../services/scpApi';
+import type { ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import type { SCPItem } from '../services/scpApi';
+import { compareByNumber, formatRating, getObjectClass, OBJECT_CLASSES, seriesLabel } from '../lib/scp';
+import { href } from '../lib/router';
+import { useFavorites } from '../lib/storage';
+import ScpCard from './ScpCard';
+import ClassBadge from './ClassBadge';
+import { EmptyState } from './States';
+
+type Sort = 'relevance' | 'number' | 'number-desc' | 'rating' | 'title';
+type View = 'grid' | 'table';
+
+const PAGE_SIZE = 24;
+
+const SORTS: { key: Sort; label: string }[] = [
+  { key: 'relevance', label: 'Rilevanza' },
+  { key: 'number', label: 'N° ↑' },
+  { key: 'number-desc', label: 'N° ↓' },
+  { key: 'rating', label: 'Voto' },
+  { key: 'title', label: 'A–Z' },
+];
 
 interface ScpListProps {
-  items: SCPItem[];
-  isLoading: boolean;
-  error: string | null;
-  onOpenArticle: (id: string) => void;
+  kicker: string;
   title: string;
+  description?: ReactNode;
+  items: SCPItem[];
+  defaultSort?: Sort;
+  /** Changing this key resets filters and pagination (e.g. route changes). */
+  resetKey: string;
+  emptyMessage?: ReactNode;
 }
 
-const ITEMS_PER_PAGE = 24;
+function readView(): View {
+  try {
+    return localStorage.getItem('scp-view') === 'table' ? 'table' : 'grid';
+  } catch {
+    return 'grid';
+  }
+}
 
-export default function ScpList({ items, isLoading, error, onOpenArticle, title }: ScpListProps) {
+export default function ScpList({ kicker, title, description, items, defaultSort = 'number', resetKey, emptyMessage }: ScpListProps) {
+  const [sort, setSort] = useState<Sort>(defaultSort);
+  const [classFilter, setClassFilter] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'rating'>('asc');
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [view, setView] = useState<View>(readView);
+  const { favorites, toggle } = useFavorites();
 
   useEffect(() => {
-     setFavorites(localStorage.getItem("scp-favorites") ? JSON.parse(localStorage.getItem("scp-favorites")!) : []);
+    setSort(defaultSort);
+    setClassFilter(null);
+    setPage(1);
+  }, [resetKey, defaultSort]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('scp-view', view);
+    } catch {
+      /* ignore */
+    }
+  }, [view]);
+
+  const classCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of items) {
+      const k = getObjectClass(item).key;
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    return counts;
   }, [items]);
 
-  const toggleFav = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    const newFavs = toggleFavorite(id);
-    setFavorites(newFavs);
-  };
-
-  const sortedItems = useMemo(() => {
-    const arr = [...items];
-    if (sortOrder === 'asc') {
-      arr.sort((a, b) => (a.scpNumber || 0) - (b.scpNumber || 0));
-    } else if (sortOrder === 'desc') {
-      arr.sort((a, b) => (b.scpNumber || 0) - (a.scpNumber || 0));
-    } else if (sortOrder === 'rating') {
-      arr.sort((a, b) => b.rating - a.rating);
+  const filtered = useMemo(() => {
+    const arr = classFilter ? items.filter((i) => getObjectClass(i).key === classFilter) : [...items];
+    switch (sort) {
+      case 'number':
+        arr.sort(compareByNumber);
+        break;
+      case 'number-desc':
+        arr.sort((a, b) => compareByNumber(b, a));
+        break;
+      case 'rating':
+        arr.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'title':
+        arr.sort((a, b) => a.title.localeCompare(b.title, 'it'));
+        break;
     }
     return arr;
-  }, [items, sortOrder]);
+  }, [items, sort, classFilter]);
 
-  const paginatedItems = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return sortedItems.slice(start, start + ITEMS_PER_PAGE);
-  }, [sortedItems, page]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount);
+  const visible = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-10 font-mono text-slate-500 animate-pulse">
-        <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-800 rounded-full animate-spin mb-4"></div>
-        &gt; RETRIEVING RECORDS... PLEASE WAIT
-      </div>
-    );
-  }
+  const goTo = (p: number) => {
+    setPage(Math.min(Math.max(1, p), pageCount));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  if (error) {
-    return (
-      <div className="flex-1 p-10 font-mono text-red-600 font-bold bg-red-50 border border-red-200 m-6">
-        &gt; SYSTEM ERROR: {error.toUpperCase()}
-      </div>
-    );
-  }
+  const availableClasses = OBJECT_CLASSES.filter((c) => classCounts[c.key]);
 
   return (
-    <div className="max-w-6xl w-full mx-auto font-sans p-6 md:p-10 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8 border-b-2 border-slate-200 pb-4">
-        <div>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Database Query Results</p>
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{title}</h2>
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-8 sm:py-12">
+      <header className="mb-8 border-b border-line-strong pb-6 animate-rise">
+        <p className="kicker mb-3">{kicker}</p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1 className="font-display text-4xl font-black uppercase leading-none tracking-tight sm:text-5xl">{title}</h1>
+          <p className="font-mono text-xs uppercase tracking-widest text-ink-2">
+            <span className="text-2xl font-bold text-ink">{filtered.length.toLocaleString('it-IT')}</span>{' '}
+            dossier
+          </p>
         </div>
-        
-        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-          <span className="text-slate-500 mr-2">SORT:</span>
-          <button 
-            onClick={() => setSortOrder('asc')} 
-            className={`px-3 py-1.5 border rounded-sm transition-colors ${sortOrder === 'asc' ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-300 bg-white hover:border-slate-400 text-slate-600'}`}
-          >
-            <ArrowUp className="inline w-3 h-3 mr-1"/> NUM
-          </button>
-          <button 
-            onClick={() => setSortOrder('desc')} 
-            className={`px-3 py-1.5 border rounded-sm transition-colors ${sortOrder === 'desc' ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-300 bg-white hover:border-slate-400 text-slate-600'}`}
-          >
-            <ArrowDown className="inline w-3 h-3 mr-1"/> NUM
-          </button>
-          <button 
-            onClick={() => setSortOrder('rating')} 
-            className={`px-3 py-1.5 border rounded-sm transition-colors ${sortOrder === 'rating' ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-300 bg-white hover:border-slate-400 text-slate-600'}`}
-          >
-            <Star className="inline w-3 h-3 mr-1"/> RATING
-          </button>
-        </div>
-      </div>
+        {description && <div className="mt-4 max-w-2xl font-serif text-lg text-ink-2">{description}</div>}
+      </header>
 
-      <p className="text-sm text-slate-500 font-mono">MATCHING DOSSIERS: {items.length}</p>
-
-      {items.length === 0 ? (
-        <div className="text-slate-500 font-mono text-center py-20 bg-slate-100 border border-slate-200 rounded">
-          &gt; NO RECORDS FOUND MATCHING THE CURRENT DIRECTIVE.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {paginatedItems.map(item => (
-            <div 
-              key={item.id}
-              onClick={() => onOpenArticle(item.id)}
-              className="bg-white border border-slate-300 flex flex-col overflow-hidden relative group cursor-pointer hover:border-slate-500 hover:shadow-md transition-all rounded-sm"
+      {items.length > 0 && (
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtra per classe">
+            <button
+              onClick={() => {
+                setClassFilter(null);
+                setPage(1);
+              }}
+              aria-pressed={classFilter === null}
+              className={`border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                classFilter === null ? 'border-line-strong bg-ink text-bg' : 'border-line text-ink-2 hover:border-line-strong'
+              }`}
             >
-              <div className="absolute top-0 left-0 h-full w-1 bg-slate-200 group-hover:bg-red-700 transition-colors z-10"></div>
-              
-              {item.images && item.images.length > 0 && (
-                <div className="aspect-[16/9] w-full bg-slate-100 border-b border-slate-200 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition-colors z-10"></div>
-                  <img src={item.images[0]} alt={item.title} loading="lazy" className="w-full h-full object-cover mix-blend-multiply grayscale-[50%] group-hover:grayscale-0 transition-all duration-500" onError={(e) => e.currentTarget.style.display = 'none'} />
-                </div>
-              )}
-              
-              <div className="p-5 flex-1 flex flex-col ml-1">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="text-red-700 font-mono text-sm font-bold uppercase tracking-widest flex items-center gap-1.5 bg-red-50 px-2 py-0.5 rounded-sm">
-                    <FileText size={14} /> {item.scp}
-                  </div>
-                  <button onClick={(e) => toggleFav(e, item.id)} className={`transition-colors p-1.5 rounded-sm ${favorites.includes(item.id) ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}>
-                    <Bookmark size={16} fill={favorites.includes(item.id) ? "currentColor" : "none"} />
-                  </button>
-                </div>
-                
-                <h3 className="text-lg font-bold mb-3 text-slate-900 leading-tight font-serif line-clamp-2">{item.title}</h3>
-                
-                <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-slate-100">
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-slate-100 text-slate-600 font-medium">
-                    RATING: {item.rating > 0 ? `+${item.rating}` : item.rating}
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-slate-100 text-slate-600 font-medium truncate max-w-[150px]">
-                    {item.series}
-                  </span>
-                </div>
-              </div>
+              Tutte
+            </button>
+            {availableClasses.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => {
+                  setClassFilter(classFilter === c.key ? null : c.key);
+                  setPage(1);
+                }}
+                aria-pressed={classFilter === c.key}
+                className={`inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                  classFilter === c.key ? 'border-line-strong bg-ink text-bg' : 'border-line text-ink-2 hover:border-line-strong'
+                }`}
+              >
+                <span className="size-1.5 rounded-full" style={{ background: c.color }} />
+                {c.label}
+                <span className="opacity-60">{classCounts[c.key]}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex border border-line" role="group" aria-label="Ordina">
+              {SORTS.filter((s) => s.key !== 'relevance' || defaultSort === 'relevance').map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => {
+                    setSort(s.key);
+                    setPage(1);
+                  }}
+                  aria-pressed={sort === s.key}
+                  className={`px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                    sort === s.key ? 'bg-ink text-bg' : 'text-ink-2 hover:bg-surface-2'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
-          ))}
+            <div className="flex border border-line" role="group" aria-label="Vista">
+              <button
+                onClick={() => setView('grid')}
+                aria-pressed={view === 'grid'}
+                aria-label="Vista a griglia"
+                className={`grid size-8 place-items-center ${view === 'grid' ? 'bg-ink text-bg' : 'text-ink-2 hover:bg-surface-2'}`}
+              >
+                <LayoutGrid size={14} />
+              </button>
+              <button
+                onClick={() => setView('table')}
+                aria-pressed={view === 'table'}
+                aria-label="Vista a elenco"
+                className={`grid size-8 place-items-center ${view === 'table' ? 'bg-ink text-bg' : 'text-ink-2 hover:bg-surface-2'}`}
+              >
+                <List size={14} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Pagination component */}
-      {items.length > ITEMS_PER_PAGE && (
-        <div className="flex justify-center items-center gap-4 mt-12 mb-8 font-mono text-sm">
-          <button 
-            disabled={page === 1}
-            onClick={() => { setPage(p => p - 1); window.scrollTo(0,0); }}
-            className="px-4 py-2 border border-slate-300 bg-white hover:border-slate-800 hover:text-slate-900 disabled:opacity-50 disabled:hover:border-slate-300 transition-colors rounded-sm shadow-sm"
-          >
-            &lt; PREV
-          </button>
-          <span className="text-slate-600 font-medium">PAGE {page} OF {Math.ceil(items.length / ITEMS_PER_PAGE)}</span>
-          <button 
-            disabled={page >= Math.ceil(items.length / ITEMS_PER_PAGE)}
-            onClick={() => { setPage(p => p + 1); window.scrollTo(0,0); }}
-            className="px-4 py-2 border border-slate-300 bg-white hover:border-slate-800 hover:text-slate-900 disabled:opacity-50 disabled:hover:border-slate-300 transition-colors rounded-sm shadow-sm"
-          >
-            NEXT &gt;
-          </button>
+      {filtered.length === 0 ? (
+        <EmptyState title="Nessun dossier trovato">{emptyMessage}</EmptyState>
+      ) : view === 'grid' ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {visible.map((item) => (
+            <ScpCard key={item.id} item={item} saved={favorites.includes(item.id)} onToggleSave={toggle} />
+          ))}
         </div>
+      ) : (
+        <div className="overflow-x-auto border border-line bg-surface">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-line-strong">
+              <tr className="kicker">
+                <th className="px-4 py-3 font-medium">Designazione</th>
+                <th className="px-4 py-3 font-medium">Titolo</th>
+                <th className="px-4 py-3 font-medium">Classe</th>
+                <th className="hidden px-4 py-3 font-medium md:table-cell">Serie</th>
+                <th className="px-4 py-3 text-right font-medium">Voto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((item) => (
+                <tr key={item.id} className="border-b border-line last:border-0 hover:bg-surface-2">
+                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-bold">
+                    <a href={href.article(item.id)} className="hover:text-accent">
+                      {item.scp}
+                    </a>
+                  </td>
+                  <td className="px-4 py-3 font-serif text-base">
+                    <a href={href.article(item.id)} className="hover:text-accent">
+                      {item.title}
+                    </a>
+                  </td>
+                  <td className="px-4 py-3">
+                    <ClassBadge cls={getObjectClass(item)} />
+                  </td>
+                  <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-[11px] uppercase text-muted md:table-cell">
+                    {seriesLabel(item.series)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-xs">{formatRating(item.rating)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {pageCount > 1 && (
+        <nav className="mt-10 flex items-center justify-center gap-1 font-mono text-xs" aria-label="Paginazione">
+          <button
+            disabled={current === 1}
+            onClick={() => goTo(current - 1)}
+            className="grid size-9 place-items-center border border-line hover:border-line-strong disabled:opacity-30 disabled:hover:border-line"
+            aria-label="Pagina precedente"
+          >
+            <ChevronLeft size={15} />
+          </button>
+          {pageNumbers(current, pageCount).map((p, i) =>
+            p === null ? (
+              <span key={`gap-${i}`} className="px-1 text-muted">
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => goTo(p)}
+                aria-current={p === current ? 'page' : undefined}
+                className={`h-9 min-w-9 border px-2 ${
+                  p === current ? 'border-line-strong bg-ink text-bg' : 'border-line hover:border-line-strong'
+                }`}
+              >
+                {p}
+              </button>
+            ),
+          )}
+          <button
+            disabled={current === pageCount}
+            onClick={() => goTo(current + 1)}
+            className="grid size-9 place-items-center border border-line hover:border-line-strong disabled:opacity-30 disabled:hover:border-line"
+            aria-label="Pagina successiva"
+          >
+            <ChevronRight size={15} />
+          </button>
+        </nav>
       )}
     </div>
   );
+}
+
+function pageNumbers(current: number, total: number): (number | null)[] {
+  const pages = new Set([1, total, current, current - 1, current + 1]);
+  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const out: (number | null)[] = [];
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) out.push(null);
+    out.push(p);
+  });
+  return out;
 }

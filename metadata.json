@@ -1,6 +1,5 @@
 {
-  "name": "SCP Foundation Archival Database",
-  "description": "A modernized, graphically improved replica of the SCP Foundation Wiki.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "name": "SCP Foundation Archive",
+  "description": "Archivio moderno e consultabile della SCP Foundation: dossier, classi d'oggetto, serie e preferiti.",
+  "requestFramePermissions": []
 }
