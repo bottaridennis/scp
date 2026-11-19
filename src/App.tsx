@@ -10,6 +10,7 @@ import { href, navigate, useRoute, type Route } from './lib/router';
 import { getClassInfo, getSeriesInfo, searchItems } from './lib/scp';
 import { useDocumentTitle, useFavorites } from './lib/storage';
 import { Loader } from './components/States';
+import LicensesPage from './components/LicensesPage';
 
 export default function App() {
   const route = useRoute();
@@ -152,7 +153,12 @@ export default function App() {
                 </a>
                 .
               </p>
-              <p className="uppercase tracking-widest">Secure · Contain · Protect</p>
+              <p className="flex items-center gap-4">
+                <a href={href.licenses()} className="underline hover:text-ink">
+                  Licenze e crediti
+                </a>
+                <span className="uppercase tracking-widest">Secure · Contain · Protect</span>
+              </p>
             </div>
           </footer>
         </main>
@@ -225,11 +231,12 @@ function Page({ route, items, byId, loading, favorites, seriesCounts, onRandom }
     }
   }, [route, items, byId, favorites]);
 
-  useDocumentTitle(list ? list.title : route.name === 'home' ? '' : route.name === 'not-found' ? 'Pagina non trovata' : '');
+  useDocumentTitle(list ? list.title : route.name === 'home' ? '' : route.name === 'not-found' ? 'Pagina non trovata' : route.name === 'licenses' ? 'Licenze e crediti' : '');
 
   if (route.name === 'home') {
     return <HomePage items={items} byId={byId} isLoading={loading} seriesCounts={seriesCounts} onRandom={onRandom} />;
   }
+  if (route.name === 'licenses') return <LicensesPage />;
   if (route.name === 'article') {
     return <ScpArticle key={route.id} id={route.id} items={items} byId={byId} isLoadingIndex={loading} onRandom={onRandom} />;
   }

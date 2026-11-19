@@ -10,7 +10,7 @@ import {
   Star,
   User,
 } from 'lucide-react';
-import { fetchScpContent, prepareContent, type SCPItem } from '../services/scpApi';
+import { fetchScpContent, prepareContent, type PreparedContent, type SCPItem } from '../services/scpApi';
 import { compareByNumber, formatDate, formatRating, getObjectClass, getSeriesInfo, seriesLabel } from '../lib/scp';
 import { href } from '../lib/router';
 import { addToHistory, useDocumentTitle, useFavorites } from '../lib/storage';
@@ -27,7 +27,7 @@ interface ScpArticleProps {
 
 type ContentState =
   | { status: 'loading' }
-  | { status: 'ready'; html: string }
+  | ({ status: 'ready' } & PreparedContent)
   | { status: 'error'; message: string };
 
 export default function ScpArticle({ id, items, byId, isLoadingIndex, onRandom }: ScpArticleProps) {
@@ -47,7 +47,7 @@ export default function ScpArticle({ id, items, byId, isLoadingIndex, onRandom }
     fetchScpContent(item)
       .then((raw) => {
         if (cancelled) return;
-        setContent({ status: 'ready', html: prepareContent(raw, (k) => byId.has(k)) });
+        setContent({ status: 'ready', ...prepareContent(raw, (k) => byId.has(k)) });
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -103,6 +103,14 @@ export default function ScpArticle({ id, items, byId, isLoadingIndex, onRandom }
   const series = getSeriesInfo(item.series);
   const created = formatDate(item.createdAt);
   const visibleTags = item.tags.filter((t) => !t.startsWith('_'));
+  // The real author comes from the article's own citation box; the index only
+  // knows who created the page, which is not always the author.
+  const author =
+    content.status === 'ready'
+      ? (content.author ?? item.createdBy ?? null)
+      : content.status === 'error'
+        ? (item.createdBy ?? null)
+        : undefined;
 
   return (
     <article className="relative">
@@ -191,7 +199,10 @@ export default function ScpArticle({ id, items, byId, isLoadingIndex, onRandom }
             <div className="bg-surface p-4">
               <dt className="kicker mb-2">Autore</dt>
               <dd className="flex items-center gap-1.5 truncate font-mono text-sm">
-                <User size={14} className="shrink-0 text-muted" /> {item.createdBy ?? 'Sconosciuto'}
+                <User size={14} className="shrink-0 text-muted" />{' '}
+                <span className="truncate" title={author ?? undefined}>
+                  {author === undefined ? '…' : (author ?? 'Sconosciuto')}
+                </span>
               </dd>
             </div>
             <div className="bg-surface p-4">
@@ -277,17 +288,51 @@ export default function ScpArticle({ id, items, byId, isLoadingIndex, onRandom }
         </nav>
       )}
 
-      <p className="mx-auto max-w-6xl px-4 py-8 font-mono text-[11px] leading-relaxed text-muted sm:px-8">
-        &ldquo;{item.scp}&rdquo; {item.createdBy ? <>di {item.createdBy}, </> : null}dal{' '}
-        <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">
-          SCP Wiki
-        </a>
-        . Distribuito con licenza{' '}
-        <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer" className="underline">
-          CC BY-SA 3.0
-        </a>
-        .
-      </p>
+      {/* Licensing (CC BY-SA 3.0 attribution) */}
+      <section aria-labelledby="licensing-title" className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
+        <div className="max-w-[72ch] border-l-2 border-line-strong pl-5">
+          <h2 id="licensing-title" className="kicker mb-3">
+            Licenza e crediti
+          </h2>
+          <p className="font-mono text-xs leading-relaxed text-ink-2">
+            &ldquo;
+            <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">
+              {item.scp}
+            </a>
+            &rdquo;{author ? <> di {author}</> : null}, dal{' '}
+            <a href="https://scp-wiki.wikidot.com" target="_blank" rel="noopener noreferrer" className="underline">
+              SCP Wiki
+            </a>
+            . Fonte:{' '}
+            <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline break-all">
+              {item.sourceUrl}
+            </a>
+            . Licenza{' '}
+            <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.it" target="_blank" rel="noopener noreferrer" className="underline">
+              CC BY-SA 3.0
+            </a>
+            .
+          </p>
+          <p className="mt-2 font-mono text-xs leading-relaxed text-muted">
+            Modifiche: testo riformattato per questo sito (impaginazione, stili e link adattati, elementi di navigazione
+            del wiki rimossi). Questa versione è distribuita con la stessa licenza CC BY-SA 3.0.
+          </p>
+          {content.status === 'ready' && content.credits && (
+            <div className="mt-6">
+              <h3 className="kicker mb-3">Immagini e file multimediali</h3>
+              <div
+                className="scp-content scp-credits text-sm"
+                dangerouslySetInnerHTML={{ __html: content.credits }}
+              />
+            </div>
+          )}
+          <p className="mt-4 font-mono text-[11px] text-muted no-print">
+            <a href={href.licenses()} className="underline hover:text-ink">
+              Tutte le licenze e i crediti del sito
+            </a>
+          </p>
+        </div>
+      </section>
     </article>
   );
 }

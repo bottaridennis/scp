@@ -165,18 +165,66 @@ const KEEP_STYLE_PROPS = new Set([
 
 const REDACTION_RE = /(█+|\[\s*(?:DATA EXPUNGED|REDACTED|DATI CANCELLATI|CENSURATO)\s*\])/gi;
 
+export type PreparedContent = {
+  /** Cleaned article body. */
+  html: string;
+  /** Author line from the wiki's "Cite this page as" box, e.g. "Moto42". */
+  author: string | null;
+  /** Licensing credits for images/files used in the article (HTML), if any. */
+  credits: string | null;
+};
+
+const SANITIZE_OPTIONS = {
+  ADD_ATTR: ['target'],
+  FORBID_TAGS: ['form', 'input', 'button', 'iframe'],
+};
+
+/**
+ * Pulls the attribution data out of the wiki's licence box. The box itself
+ * is wiki chrome, but its contents are what CC BY-SA requires us to show:
+ * the real author(s) of the article and the authors/licences of any images.
+ */
+function extractLicensing(root: HTMLElement): { author: string | null; credits: HTMLElement | null } {
+  const box = root.querySelector('.licensebox');
+  if (!box) return { author: null, credits: null };
+  box.remove();
+
+  const citation = box.querySelector('.list-pages-item blockquote')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+  const match = citation.match(/^["“]?.+?["”]\s+by\s+(.+?),\s+from the\b/i);
+  const author = match ? match[1].trim() : null;
+
+  const blocks = Array.from(box.querySelectorAll('blockquote')).filter((b) => !b.closest('.list-pages-item'));
+  if (blocks.length === 0) return { author, credits: null };
+  const credits = box.ownerDocument.createElement('div');
+  blocks.forEach((b) => credits.appendChild(b));
+  // Drop avatars and Wikidot error notes, keep names and links.
+  credits.querySelectorAll('img, .error-inline').forEach((el) => {
+    if (el.classList.contains('error-inline')) el.replaceWith(el.textContent?.replace(/ does not match.*$/, '') ?? '');
+    else el.remove();
+  });
+  return { author, credits };
+}
+
 /**
  * Transforms the raw wiki HTML into clean, theme-friendly markup:
  * removes wiki chrome, converts collapsibles and tabs, rewrites links to
- * in-app routes, upgrades images and marks redactions.
+ * in-app routes, upgrades images and marks redactions. Attribution data
+ * from the licence box is returned separately so it is never lost.
  */
-export function prepareContent(rawHtml: string, isKnownId: (id: string) => boolean): string {
+export function prepareContent(rawHtml: string, isKnownId: (id: string) => boolean): PreparedContent {
   const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
   const root = doc.getElementById('page-content') ?? doc.body;
 
+  const { author, credits } = extractLicensing(root);
+  // Process the credits with the same link/style clean-up as the article.
+  if (credits) {
+    credits.id = 'scp-licensing-credits';
+    root.appendChild(credits);
+  }
+
   root
     .querySelectorAll(
-      'script, style, link, .licensebox, .page-rate-widget-box, .rate-box-with-credit-button, .creditRate, .credit-rate, .footer-wikiwalk-nav, .modal-wrapper, .creditButton, .info-container',
+      'script, style, link, .page-rate-widget-box, .rate-box-with-credit-button, .creditRate, .credit-rate, .footer-wikiwalk-nav, .modal-wrapper, .creditButton, .info-container',
     )
     .forEach((el) => el.remove());
 
@@ -314,10 +362,18 @@ export function prepareContent(rawHtml: string, isKnownId: (id: string) => boole
     node.replaceWith(frag);
   });
 
-  return DOMPurify.sanitize(root.innerHTML, {
-    ADD_ATTR: ['target'],
-    FORBID_TAGS: ['form', 'input', 'button', 'iframe'],
-  });
+  let creditsHtml: string | null = null;
+  const processedCredits = credits ? root.querySelector('#scp-licensing-credits') : null;
+  if (processedCredits) {
+    processedCredits.remove();
+    creditsHtml = DOMPurify.sanitize(processedCredits.innerHTML, SANITIZE_OPTIONS);
+  }
+
+  return {
+    html: DOMPurify.sanitize(root.innerHTML, SANITIZE_OPTIONS),
+    author,
+    credits: creditsHtml,
+  };
 }
 
 /* ------------------------------------------------------------------ */
