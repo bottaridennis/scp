@@ -9,6 +9,7 @@ export type Route =
   | { name: 'search'; query: string }
   | { name: 'archive' }
   | { name: 'saved' }
+  | { name: 'licenses' }
   | { name: 'not-found' };
 
 function safeDecode(s: string): string {
@@ -39,6 +40,8 @@ export function parseHash(hash: string): Route {
       return { name: 'archive' };
     case 'saved':
       return { name: 'saved' };
+    case 'licenze':
+      return { name: 'licenses' };
     default:
       return { name: 'not-found' };
   }
@@ -53,6 +56,7 @@ export const href = {
   search: (q: string) => `#/search/${encodeURIComponent(q)}`,
   archive: () => '#/archive',
   saved: () => '#/saved',
+  licenses: () => '#/licenze',
 };
 
 export function navigate(to: string) {

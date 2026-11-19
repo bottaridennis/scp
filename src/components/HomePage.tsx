@@ -110,6 +110,9 @@ export default function HomePage({ items, byId, isLoading, seriesCounts, onRando
                 L&rsquo;oggetto non può muoversi finché si trova nel campo visivo diretto. Il contatto visivo non deve
                 essere interrotto in nessun momento.
               </p>
+              <p className="mt-3 font-mono text-[10px] text-muted">
+                Tradotto da &ldquo;SCP-173&rdquo; di Moto42 · SCP Wiki · CC BY-SA 3.0
+              </p>
               <span className="mt-8 inline-flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest group-hover:text-accent">
                 Apri il fascicolo <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
               </span>

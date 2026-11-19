@@ -354,6 +354,9 @@ body {
 
 .scp-content .clearfix::after, .scp-content::after { content: ""; display: table; clear: both; }
 
+.scp-content.scp-credits { font-size: 0.9rem; line-height: 1.6; }
+.scp-content.scp-credits blockquote { font-size: 0.78rem; }
+
 @media print {
   .no-print { display: none !important; }
   html, body { background: #fff; }
