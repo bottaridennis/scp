@@ -1,0 +1,21 @@
+{
+  "name": "sito47-terminale",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build:content": "node scripts/build-content.ts",
+    "dev": "npm run build:content && vite --port=3001 --host=0.0.0.0",
+    "build": "npm run build:content && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  }
+}
