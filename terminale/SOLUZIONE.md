@@ -175,3 +175,14 @@ ponte di rete con il codice che ha imparato da lei.
 | `sito47://narratore` | 0 | pagina dedicata ad Amico Diverte con i link veri (YouTube, Linktree, libro) in una nuova scheda |
 
 Qualsiasi altro indirizzo: «ERR_CENERE_ISOLAMENTO».
+
+## Voci registrate
+
+Con i suoni attivi partono da sole; nella Radio e nella Fonoteca c'è sempre il pulsante «Ascolta».
+Oltre il livello 0 sono cifrate e si sentono solo con il livello sbloccato.
+
+- **Livello 0**: ordine di incarico, radio 7,215 e 4,470, evento delle 03:05, «non girarti» (CAM-C3).
+- **Intruso** (linea interna 4): Giulia, Marco, Anna, la supplica, Bruno, D-4719, la risposta di Davide.
+- **Radio**: Mensa 1994 (10,17), IANUS-4 (3,047), 11,47 dopo il finale buono.
+- **Fonoteca**: 13 voci su 16. Giulia è muta (Eco non l'ha mai sentita); «ospite — tu» e «il Narratore»
+  non hanno una registrazione.
