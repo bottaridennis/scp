@@ -17,5 +17,9 @@ Cartelle disponibili per gli ospiti:
   /pubblico        avvisi e rubrica del personale
   /manutenzione    note tecniche
 
+Esplora risorse non mostra i file di sistema (quelli il cui nome inizia
+con un punto) e non apre i file cifrati: per quelli usare il Terminale
+(ls -a, decrypt).
+
 > Si ricorda che, ai sensi del Protocollo SILENZIO, è vietato
 > pronunciare ad alta voce il contenuto dei documenti dell'Ala Est.

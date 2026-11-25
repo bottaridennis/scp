@@ -7,11 +7,11 @@
 | Cosa                          | Valore              | Dove si trova                                              |
 |-------------------------------|---------------------|------------------------------------------------------------|
 | Password `g.rinaldi` (L1)     | `rinaldi214`        | `/manutenzione/nota-it.txt` (formula) + `/pubblico/rubrica-interni.txt` (interno 214) |
-| Chiave `ferri-credenziali.enc`| `veglia`            | `/archivio/comunicazioni/centralino-0303.log` (L1)          |
-| Password `m.ferri` (L2)       | `fondoscala`        | `/home/g.rinaldi/ferri-credenziali.enc` (decifrato)         |
+| Chiave `.ferri-credenziali.enc`| `veglia`            | `/archivio/comunicazioni/centralino-0303.log` (L1)          |
+| Password `m.ferri` (L2)       | `fondoscala`        | `/home/g.rinaldi/.ferri-credenziali.enc` (decifrato)         |
 | Password `a.costa` (L3)       | `saraceno1987`      | `/home/m.ferri/diario.txt` (regola) + `/archivio/verbali/verbale-trasferimento-1987.txt` (Monte Saraceno, 1987); `search saraceno` |
-| Chiave `registro-personale.enc` | `ritorno`         | `/archivio/protocolli/protocollo-silenzio.txt`, punto 6, leggibile solo a livello 3 |
-| Finale buono                  | `sigilla nessuno ascolta` | `/home/a.costa/registro-personale.enc`               |
+| Chiave `.registro-personale.enc` | `ritorno`         | `/archivio/protocolli/protocollo-silenzio.txt`, punto 6, leggibile solo a livello 3 |
+| Finale buono                  | `sigilla nessuno ascolta` | `/home/a.costa/.registro-personale.enc`               |
 | Finale cattivo                | `riapri 4471-vega`  | detto dall'intruso dopo la lettura del registro             |
 
 ## Percorso
@@ -24,16 +24,16 @@ login g.rinaldi                        # password: rinaldi214
 cat appunti.txt                        # il file di Ferri si apre con la parola del turno di notte
 mail 2                                 # conferma: la chiave è la parola del turno
 cat /archivio/comunicazioni/centralino-0303.log   # parola d'ordine VEGLIA
-decrypt ferri-credenziali.enc veglia
-cat ferri-credenziali.enc              # m.ferri / fondoscala
+decrypt .ferri-credenziali.enc veglia
+cat .ferri-credenziali.enc              # m.ferri / fondoscala
 login m.ferri                          # password: fondoscala
 cat diario.txt                         # password di Costa: nome della montagna + anno, senza "Monte"
 search saraceno                        # oppure: cat /archivio/verbali/verbale-trasferimento-1987.txt
 login a.costa                          # password: saraceno1987
 cat promemoria.txt                     # chiave del registro = parola interdetta del Protocollo Silenzio
 cat /archivio/protocolli/protocollo-silenzio.txt  # al livello 3 compare: RITORNO
-decrypt registro-personale.enc ritorno
-cat registro-personale.enc             # la verità e la frase del sigillo
+decrypt .registro-personale.enc ritorno
+cat .registro-personale.enc             # la verità e la frase del sigillo
 # attendere il messaggio dell'intruso (circa 8 secondi), poi:
 sigilla nessuno ascolta                # FINALE BUONO
 ```

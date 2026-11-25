@@ -3,7 +3,7 @@ id: finale-sigillo
 livello: 3
 tipo: finale
 comando: sigilla nessuno ascolta
-dopo_lettura: /home/a.costa/registro-personale.enc
+dopo_lettura: /home/a.costa/.registro-personale.enc
 ---
 PROCEDURA DI SIGILLO AVVIATA — autorizzazione: a.costa
 

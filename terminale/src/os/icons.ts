@@ -13,7 +13,7 @@ export const ICONS = {
   docEncrypted: svg('<path d="M3 1h7l3 3v11H3z" fill="#e9e4cf" stroke="#666"/><path d="M5 6h2M8 6h3M5 8h4M10 8h1M5 10h1M7 10h4M5 12h3" stroke="#6b6b3a"/>'),
   image: svg('<rect x="1" y="2" width="14" height="12" fill="#fff" stroke="#555"/><path d="M2 12l4-5 3 3.5 2-2 3 3.5z" fill="#5d7a5a"/><circle cx="11" cy="5.5" r="1.4" fill="#d9b44a"/>'),
   mail: svg('<rect x="1" y="3" width="14" height="10" fill="#fff" stroke="#555"/><path d="M1 3l7 5.5L15 3" fill="none" stroke="#555"/>'),
-  settings: svg('<circle cx="8" cy="8" r="2.4" fill="none" stroke="#333" stroke-width="1.4"/><path d="M8 1v2.5M8 12.5V15M1 8h2.5M12.5 8H15M3 3l1.8 1.8M11.2 11.2L13 13M13 3l-1.8 1.8M4.8 11.2L3 13" stroke="#333" stroke-width="1.6"/>'),
+  settings: svg('<path d="M8 1v2.5M8 12.5V15M1 8h2.5M12.5 8H15M3 3l1.8 1.8M11.2 11.2L13 13M13 3l-1.8 1.8M4.8 11.2L3 13" stroke="#6b6f74" stroke-width="2.4"/><circle cx="8" cy="8" r="4" fill="#c6c4bc" stroke="#34332f"/><circle cx="8" cy="8" r="1.6" fill="#34332f"/>'),
   archive: svg('<rect x="2" y="1" width="12" height="14" fill="#9aa3a8" stroke="#444"/><rect x="3.5" y="2.5" width="9" height="5" fill="#b7bfc4" stroke="#444"/><rect x="3.5" y="8.5" width="9" height="5" fill="#b7bfc4" stroke="#444"/><rect x="6.5" y="4" width="3" height="1" fill="#333"/><rect x="6.5" y="10" width="3" height="1" fill="#333"/>'),
   user: svg('<circle cx="8" cy="5" r="3" fill="#c9c3b5" stroke="#555"/><path d="M2 15c0-3.5 2.7-5.5 6-5.5s6 2 6 5.5z" fill="#3a4a6b" stroke="#222"/>'),
   guest: svg('<circle cx="8" cy="5" r="3" fill="#ddd" stroke="#777"/><path d="M2 15c0-3.5 2.7-5.5 6-5.5s6 2 6 5.5z" fill="#999" stroke="#666"/>'),

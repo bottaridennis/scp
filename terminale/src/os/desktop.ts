@@ -153,7 +153,7 @@ export class Desktop {
 
   private save() {
     if (!this.profile) return;
-    this.profile.windows = this.wm.list().map(
+    this.profile.windows = this.wm.list().filter((w) => w.app !== 'dialog').map(
       (w): SavedWindow => ({ app: w.app, args: w.args, rect: { ...w.rect }, min: w.minimized, max: w.maximized }),
     );
     this.profiles.save(this.user, this.profile);

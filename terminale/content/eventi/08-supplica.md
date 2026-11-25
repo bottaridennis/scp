@@ -3,7 +3,7 @@ id: e08-supplica
 livello: 3
 tipo: intruso
 da: a.costa
-dopo_lettura: /home/a.costa/registro-personale.enc
+dopo_lettura: /home/a.costa/.registro-personale.enc
 ritardo: 8
 ---
 no. non quel registro. l'ho scritto con lui che mi dettava.

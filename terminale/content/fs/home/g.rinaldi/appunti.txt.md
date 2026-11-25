@@ -16,8 +16,9 @@ ricordarla. Domani sono in malattia: spero che lasci perdere.
 01/03, sera
 Mi ha mandato un file cifrato con le sue credenziali "di emergenza",
 per il banco di misura. Dice che la chiave è proprio la parola del
-turno di notte: "così solo un operatore può aprirlo". È nella mia home.
-Non l'ho aperto. Non voglio saperne niente.
+turno di notte: "così solo un operatore può aprirlo". L'ho nascosto
+nella mia home (il nome inizia con un punto, così non si vede nelle
+cartelle). Non l'ho aperto. Non voglio saperne niente.
 
 04/03
 Il centralino dice che alle 04:02 qualcuno ha chiamato la Costa dal

@@ -5,6 +5,8 @@ import { Session } from './engine/session.ts';
 import { Store } from './engine/state.ts';
 import { terminalApp } from './os/apps/terminal.ts';
 import { settingsApp } from './os/apps/settings.ts';
+import { explorerApp } from './os/apps/explorer.ts';
+import { imageApp, viewerApp } from './os/apps/viewer.ts';
 import { runBoot } from './os/boot.ts';
 import { Desktop } from './os/desktop.ts';
 import { h } from './os/dom.ts';
@@ -36,7 +38,7 @@ async function main() {
   const session = new Session(manifest, store);
 
   const desktop = new Desktop(session, app);
-  for (const a of [terminalApp, settingsApp]) desktop.register(a);
+  for (const a of [explorerApp, terminalApp, settingsApp, viewerApp, imageApp]) desktop.register(a);
 
   session.presenter = async (ev, payload, text) => {
     // Phase 1: plain notifications. See os/events.ts for the full presentation.
