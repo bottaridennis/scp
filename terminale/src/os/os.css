@@ -542,3 +542,65 @@ button { font: inherit; color: inherit; }
 }
 .msgbox-text { white-space: pre-line; overflow-wrap: anywhere; }
 .login-user-row { display: grid; gap: 6px; }
+
+/* Cameras */
+.cams { flex: 1; min-height: 0; display: grid; grid-template-columns: 220px 1fr; gap: 4px; padding: 4px; background: var(--face); }
+.cam-list { display: flex; flex-direction: column; gap: 2px; overflow: auto; background: #fff; box-shadow: inset 1px 1px var(--face-lo), inset -1px -1px var(--face-hi); padding: 2px; }
+.cam-item { display: flex; gap: 8px; align-items: center; padding: 6px; border: 0; background: transparent; text-align: left; cursor: pointer; }
+.cam-item span { display: flex; flex-direction: column; min-width: 0; }
+.cam-item strong { font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.cam-item small { color: var(--muted); font-size: 11px; }
+.cam-item:hover { background: #e8ecf4; }
+.cam-item.is-active { background: var(--select); color: var(--select-ink); }
+.cam-item.is-active small { color: inherit; }
+.cam-item.is-locked strong { color: #888; }
+.cam-screen { position: relative; background: #000; display: grid; place-items: center; overflow: hidden; }
+.cam-canvas { width: 100%; max-height: 100%; aspect-ratio: 16 / 9; image-rendering: pixelated; filter: contrast(1.15) brightness(0.95); }
+.cam-hud { position: absolute; top: 8px; left: 10px; right: 10px; display: flex; justify-content: space-between; gap: 10px; font: 13px "VT323", monospace; color: #eaeaea; text-shadow: 1px 1px #000; pointer-events: none; }
+.cam-rec { color: #ff4b4b; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.cam-msg { position: absolute; left: 10px; right: 10px; bottom: 10px; font: 16px "VT323", monospace; color: #fff; text-shadow: 1px 1px #000; pointer-events: none; min-height: 1.2em; }
+.cam-msg.is-new { animation: cam-msg 7s ease forwards; }
+@keyframes cam-msg { 0% { opacity: 0; } 5%, 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Radio */
+.radio { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #5d4f3c; }
+.radio-panel { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; background: #1d1a12; border: 2px inset #8a7a5a; }
+.radio-freq { font: 34px "VT323", monospace; color: #ffcf6b; text-shadow: 0 0 8px rgb(255 190 80 / 0.6); }
+.radio-meter { width: 120px; height: 10px; background: #000; border: 1px solid #8a7a5a; }
+.radio-meter span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3c3, #ee3, #e33); transition: width 0.15s; }
+.radio-dial { width: 100%; accent-color: #ffcf6b; }
+.radio-controls { display: flex; gap: 4px; align-items: center; }
+.radio-input { flex: 1; text-align: center; }
+.radio-out { flex: 1; min-height: 140px; font-size: 19px; white-space: pre-wrap; }
+
+/* Fonoteca */
+.voices { display: flex; flex-direction: column; gap: 10px; }
+.voices-head { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; }
+.voices-count { color: var(--muted); }
+.voices-bar { grid-column: span 2; height: 10px; background: #fff; box-shadow: inset 1px 1px var(--face-lo); }
+.voices-bar span { display: block; height: 100%; background: var(--title-a); }
+.voices-list { display: grid; gap: 4px; }
+.voice { background: #fff; border: 1px solid #d0cec6; }
+.voice summary, .voice.is-unknown { display: flex; gap: 8px; align-items: center; padding: 6px 8px; cursor: pointer; font-weight: bold; }
+.voice.is-unknown { color: #888; font-weight: normal; font-style: italic; cursor: default; }
+.voice .doc-text { padding: 4px 12px 10px; font-size: 13px; }
+
+/* Mail replies */
+.mail-replies { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 16px 16px; border-top: 1px solid #ddd; }
+.mail-reply { min-width: 0; text-align: left; }
+
+/* Intro briefing */
+.intro-overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgb(10 14 16 / 0.85); }
+.intro-win { position: relative; width: min(680px, 100%); height: min(620px, 100%); }
+.intro-body { display: flex; flex-direction: column; }
+.intro-body .doc-scroll { flex: 1; }
+.intro-letter .intro-p { font: 15px/1.6 Georgia, "Times New Roman", serif; margin: 0 0 12px; }
+.intro-btns { padding: 8px; margin: 0; }
+
+@media (max-width: 760px) {
+  .cams { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .cam-list { flex-direction: row; overflow-x: auto; }
+  .cam-item { flex-shrink: 0; }
+  .intro-win { height: 100%; }
+}

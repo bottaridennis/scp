@@ -15,6 +15,11 @@ export type SaveState = {
   logins: string[];
   mailRead: string[];
   ending: string | null;
+  /** Corrupted files repaired with `ripara`. */
+  repaired: string[];
+  /** Mail replies already sent ("user/mailId"). */
+  replied: string[];
+  introSeen: boolean;
   bootSeen: boolean;
   startedAt: number;
   settings: { theme: Theme; audio: boolean };
@@ -32,6 +37,9 @@ function fresh(): SaveState {
     logins: [],
     mailRead: [],
     ending: null,
+    repaired: [],
+    replied: [],
+    introSeen: false,
     bootSeen: false,
     startedAt: Date.now(),
     settings: { theme: 'verde', audio: false },

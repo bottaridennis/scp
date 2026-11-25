@@ -27,9 +27,15 @@ export type ShellHost = {
   exit?: () => void;
   /** Called when this terminal's user changes. */
   userChanged?: (account: Game) => void;
+  /** Opens a desktop app (telecamere, radio, fonoteca, incarico). */
+  launch?: (appId: string, args?: unknown) => void;
 };
 
-const ORDER = ['help', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'stat', 'open', 'search', 'decrypt', 'mail', 'clear', 'audio', 'tema', 'crediti', 'reset', 'exit'];
+const ORDER = [
+  'help', 'incarico', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'stat', 'open', 'search', 'decrypt',
+  'ripara', 'unisci', 'mail', 'rispondi', 'rete', 'connetti', 'radio', 'voci', 'telecamere',
+  'clear', 'audio', 'tema', 'crediti', 'reset', 'exit',
+];
 
 export class Shell {
   private readonly term: Terminal;
@@ -86,8 +92,13 @@ export class Shell {
     }
     const home = this.home;
     const cwd = this.cwd;
-    const shown = home !== '/' && (cwd === home || cwd.startsWith(`${home}/`)) ? `~${cwd.slice(home.length)}` : cwd;
-    this.term.setPrompt(`${this.account.user}@${this.session.manifest.meta.host}:${shown}$ `);
+    const node = cwd.match(/^\/rete\/([^/]+)/)?.[1];
+    const shown = node
+      ? cwd.slice(`/rete/${node}`.length) || '/'
+      : home !== '/' && (cwd === home || cwd.startsWith(`${home}/`))
+        ? `~${cwd.slice(home.length)}`
+        : cwd;
+    this.term.setPrompt(`${this.account.user}@${node ?? this.session.manifest.meta.host}:${shown}$ `);
   }
 
   private resolve(arg: string | undefined) {
@@ -304,6 +315,74 @@ export class Shell {
           await t.echo('Questa operazione cancella tutti i progressi. Digita RESET per confermare.', 'warn');
         },
       },
+      incarico: {
+        usage: 'incarico',
+        help: 'rilegge l’ordine di incarico',
+        run: () => {
+          const intro = this.session.manifest.meta.intro;
+          if (!intro) return t.echo('Nessun incarico registrato.', 'dim');
+          return t.print([{ text: intro.titolo, cls: 'h' }, ...intro.testo.flatMap((p) => [{ text: p }, { text: '' }])], { cps: 2000 });
+        },
+      },
+      ripara: {
+        usage: 'ripara <file> <parità>',
+        help: 'ripara un file corrotto con la sua copia di parità',
+        complete: 'path',
+        run: ([file, parity]) => this.repair(file, parity),
+      },
+      unisci: {
+        usage: 'unisci <frammenti…>',
+        help: 'ricompone una chiave dai suoi frammenti',
+        complete: 'path',
+        run: (args) => this.join(args),
+      },
+      rispondi: {
+        usage: 'rispondi <mail> [opzione]',
+        help: 'risponde a un messaggio di posta',
+        run: ([n, k]) => this.replyMail(n, k),
+      },
+      rete: {
+        usage: 'rete',
+        help: 'elenca i nodi della rete interna',
+        run: async () => {
+          const { entries } = await this.fs.list('/rete', this.account);
+          if (!entries.length) return t.echo('Nessun nodo raggiungibile.', 'dim');
+          return t.echo([
+            { text: 'NODI DELLA RETE INTERNA (isolata dal 03/03/2026 04:52)', cls: 'h' },
+            ...entries.filter((e) => e.kind === 'dir').map((e) => ({ text: `  ${e.name.padEnd(16)} ${e.locked ? 'accesso negato' : 'raggiungibile'}`, cls: e.locked ? 'locked' : undefined })),
+            { text: 'Usa: connetti <nodo>', cls: 'dim' },
+          ]);
+        },
+      },
+      connetti: {
+        usage: 'connetti <nodo>',
+        help: 'si collega a un altro nodo della rete',
+        run: async ([node]) => {
+          if (!node) return t.echo('Uso: connetti <nodo>  (vedi "rete")', 'err');
+          const target = `/rete/${node.toLowerCase()}`;
+          const st = await this.fs.stat(target, this.account);
+          if (!st || st.kind !== 'dir') return t.echo(`connetti: nodo "${node}" non raggiungibile.`, 'err');
+          if (st.locked) return t.echo(`ACCESSO NEGATO — ${st.reason}`, 'err');
+          await t.print(`Connessione a ${node.toUpperCase()} ▒▒▒▒▒▒`, { cls: 'dim', cps: 60 });
+          this.cwd = target;
+          return t.echo(`Connesso a ${node.toUpperCase()}. "cd /" per tornare a T-03.`, 'ok');
+        },
+      },
+      radio: {
+        usage: 'radio [MHz]',
+        help: 'sintonizza il ricevitore radio',
+        run: ([f]) => (f ? this.tune(f) : this.host.launch ? this.host.launch('radio') : t.echo('Uso: radio <frequenza in MHz>', 'err')),
+      },
+      voci: {
+        usage: 'voci',
+        help: 'catalogo delle voci identificate',
+        run: () => this.voices(),
+      },
+      telecamere: {
+        usage: 'telecamere',
+        help: 'apre la videosorveglianza',
+        run: () => (this.host.launch ? this.host.launch('cameras') : t.echo('Nessuna interfaccia grafica disponibile.', 'err')),
+      },
       exit: {
         usage: 'exit',
         help: 'chiude il terminale',
@@ -445,6 +524,103 @@ export class Shell {
       ...(props?.autore ? [{ text: `Autore:    ${props.autore}`, cls: 'hl' }] : []),
       ...(props?.modificato ? [{ text: `Modificato: ${props.modificato}`, cls: 'hl' }] : []),
     ]);
+  }
+
+  private async repair(file?: string, parity?: string) {
+    const t = this.term;
+    if (!file || !parity) return t.echo('Uso: ripara <file> <copia di parità>', 'err');
+    const target = this.resolve(file);
+    const par = this.resolve(parity);
+    const entry = this.session.gameFs.entry(target, this.account);
+    if (!entry) return t.echo(`ripara: ${file}: file inesistente`, 'err');
+    if (!entry.c) return t.echo(`${file}: il file non risulta danneggiato.`, 'dim');
+    if (this.state.repaired.includes(target)) return t.echo(`${file}: già riparato.`, 'dim');
+    const props = await this.fs.props(par, this.account);
+    if (!props) return t.echo(`ripara: ${parity}: copia di parità non leggibile.`, 'err');
+    const meta = await this.parityTarget(par);
+    await t.print('Ricostruzione dei blocchi ▒▒▒▒▒▒▒▒▒▒▒▒', { cls: 'dim', cps: 50 });
+    if (meta !== target) {
+      this.session.sound.alert('sistema');
+      return t.echo('Parità non corrispondente: il file appartiene a un altro documento.', 'err');
+    }
+    this.state.repaired.push(target);
+    this.session.store.save();
+    this.session.notify();
+    return t.echo(`${file}: riparato. Usa: cat ${file}`, 'ok');
+  }
+
+  private async parityTarget(path: string): Promise<string | undefined> {
+    const entry = this.session.gameFs.entry(path, this.account);
+    if (!entry) return undefined;
+    const res = await this.account.read(entry);
+    return res.status === 'ok' ? res.meta?.ripara : undefined;
+  }
+
+  private async join(args: string[]) {
+    const t = this.term;
+    if (args.length < 2) return t.echo('Uso: unisci <frammento> <frammento> …', 'err');
+    const parts: { n: number; tot: number; word: string }[] = [];
+    for (const a of args) {
+      const res = await this.fs.read(this.resolve(a), this.account);
+      if (!res.ok || res.kind !== 'text') return t.echo(`unisci: ${a}: ${res.ok ? 'non è un frammento' : res.message}`, 'err');
+      const m = res.text.match(/FRAMMENTO\s+(\d+)\s*\/\s*(\d+)[^«"]*[«"]([^»"]+)[»"]/i);
+      if (!m) return t.echo(`unisci: ${a}: non è un frammento.`, 'err');
+      parts.push({ n: Number(m[1]), tot: Number(m[2]), word: m[3].trim() });
+    }
+    parts.sort((a, b) => a.n - b.n);
+    const tot = parts[0].tot;
+    const missing = Array.from({ length: tot }, (_, i) => i + 1).filter((n) => !parts.some((p) => p.n === n));
+    const phrase = Array.from({ length: tot }, (_, i) => parts.find((p) => p.n === i + 1)?.word ?? '_____').join(' ');
+    return t.echo([
+      { text: `Chiave ricomposta: ${phrase}`, cls: missing.length ? 'warn' : 'ok' },
+      { text: missing.length ? `Frammenti mancanti: ${missing.join(', ')} di ${tot}.` : 'Chiave completa.', cls: 'dim' },
+    ]);
+  }
+
+  private async replyMail(n?: string, k?: string) {
+    const t = this.term;
+    const a = this.account;
+    if (a.user === GUEST) return t.echo('L’utente ospite non ha una casella di posta.', 'err');
+    const m = a.visibleMail()[Number(n) - 1];
+    if (!m) return t.echo('Uso: rispondi <numero mail> [opzione]', 'err');
+    if (!m.r?.length) return t.echo('A questo messaggio non si può rispondere.', 'dim');
+    if (this.state.replied.includes(`${a.user}/${m.id}`)) return t.echo('Hai già risposto a questo messaggio.', 'dim');
+    const choice = Number(k);
+    if (!choice) {
+      return t.echo([{ text: `Risposte possibili a «${m.oggetto}»:`, cls: 'hl' }, ...m.r.map((r, i) => ({ text: `  ${i + 1}. ${r.t}` })), { text: `Usa: rispondi ${n} <opzione>`, cls: 'dim' }]);
+    }
+    const r = m.r[choice - 1];
+    if (!r) return t.echo('Opzione inesistente.', 'err');
+    this.session.reply(a.user, m.id, r.s);
+    return t.echo(`Risposta inviata a ${m.da}: «${r.t}»`, 'ok');
+  }
+
+  private async tune(raw: string) {
+    const t = this.term;
+    const f = Number(raw.replace(',', '.'));
+    if (!f) return t.echo('Uso: radio <frequenza in MHz>, es. radio 7,215', 'err');
+    const fired = this.state.fired;
+    const station = this.session.manifest.radio.find((s) => Math.abs(s.f - f) < 0.0051 && (!s.v || fired.includes(s.v)));
+    await t.print(`Sintonia ${f.toFixed(3).replace('.', ',')} MHz ░▒░▒░▒░`, { cls: 'dim', cps: 60 });
+    if (!station) return t.echo('…solo rumore.', 'dim');
+    const p = await this.account.openLevel(station.b, station.l);
+    if (!p) return t.echo('Segnale presente ma incomprensibile (cifratura di livello superiore).', 'warn');
+    const text = await this.account.renderBody(p.testo);
+    return t.print([{ text: `◉ ${p.nome}`, cls: 'hl' }, ...formatDoc(text)], { cps: 120 });
+  }
+
+  private async voices() {
+    const t = this.term;
+    const list = this.session.manifest.voci;
+    const lines: Line[] = [];
+    let known = 0;
+    for (const v of list) {
+      const unlocked = this.session.voiceUnlocked(v);
+      const p = unlocked ? await this.account.openLevel(v.b, v.l) : null;
+      if (p) known++;
+      lines.push(p ? { text: `  ◉ ${p.nome}` } : { text: '  ○ ??? — voce non identificata', cls: 'dim' });
+    }
+    return t.echo([{ text: `FONOTECA DI ECO — voci identificate ${known}/${list.length}`, cls: 'h' }, ...lines, { text: 'Dettagli nell’app Fonoteca.', cls: 'dim' }]);
   }
 
   private async open(arg?: string) {

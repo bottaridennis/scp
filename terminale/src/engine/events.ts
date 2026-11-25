@@ -52,11 +52,34 @@ export class EventRunner {
   }
 
   private conditionsMet(ev: EventEntry): boolean {
-    const { lettura, login, evento } = ev.cond;
+    const { lettura, login, evento, ora, giorno } = ev.cond;
     if (lettura && !this.state.read.includes(lettura)) return false;
     if (login && !this.state.logins.includes(login)) return false;
     if (evento && !this.state.fired.includes(evento)) return false;
+    const now = new Date();
+    if (giorno) {
+      const today = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      if (today !== giorno) return false;
+    }
+    if (ora) {
+      const [from, to] = ora.split('-').map((t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)));
+      const m = now.getHours() * 60 + now.getMinutes();
+      if (from <= to ? m < from || m > to : m < from && m > to) return false;
+    }
     return true;
+  }
+
+  /** Re-checks time-based events every 20 seconds. */
+  startClock() {
+    setInterval(() => this.check(), 20_000);
+  }
+
+  /** Records a named signal (e.g. a mail reply) that events can wait for with dopo_evento. */
+  signal(id: string) {
+    if (!this.state.fired.includes(id)) this.state.fired.push(id);
+    this.store.save();
+    this.onFired({ id } as EventEntry);
+    this.check();
   }
 
   private pending(ev: EventEntry) {
@@ -70,7 +93,7 @@ export class EventRunner {
       if (ev.cond.cmd || !this.pending(ev) || this.timers.has(ev.id)) continue;
       if (!this.conditionsMet(ev)) continue;
       if (ev.l > this.level) continue; // wait for an account with enough clearance
-      const hasCondition = Boolean(ev.cond.lettura || ev.cond.login || ev.cond.evento);
+      const hasCondition = Boolean(ev.cond.lettura || ev.cond.login || ev.cond.evento || ev.cond.ora || ev.cond.giorno);
       const delay = hasCondition
         ? ev.ritardo * 1000
         : Math.max(0, ev.ritardo * 1000 - (Date.now() - this.loadedAt));

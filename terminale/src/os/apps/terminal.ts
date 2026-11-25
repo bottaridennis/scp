@@ -30,6 +30,7 @@ export const terminalApp: AppDef = {
     const shell = new Shell(term, session, account, {
       open: (path, acc) => desktop.openPath(path, acc),
       exit: () => win.close(),
+      launch: (appId, args) => void desktop.open(appId, args),
       userChanged: () => win.setTitle(title()),
     });
     win.setTitle(title());
