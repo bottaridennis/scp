@@ -116,7 +116,7 @@ Omaggio ad Amico Diverte (racconti horror).
 | Porta «Livello 0 — moquette gialla» (omaggio alle Backrooms) | `/archivio/tecnico/.planimetria-1987.txt` (L2) |
 | Il libro «Racconti Horror» sparito dalla saletta | `/pubblico/bacheca.txt` |
 | App **Podcast** sul desktop: i suoi podcast su Spotify (embed ufficiale) | «Paranormale — Attraverso il velo», «Le Cronache dei Pixel» |
-| App **Browser** sul desktop: unico sito raggiungibile, il suo canale YouTube (embed ufficiale); ogni altro indirizzo dà «ERR_CENERE_ISOLAMENTO» | segnalibro nella pagina iniziale; dopo 45 s compare «Spettatori da questa rete: 2 — T-03 · interno 4» |
+| App **Browser** sul desktop: pagina dedicata «Il Narratore» con i suoi link veri | segnalibro nella pagina iniziale (vedi sotto) |
 
 ## Eventi
 
@@ -157,3 +157,21 @@ qualcuno. Lascia T-03 acceso in modalità ospite e dissemina l'archivio di indiz
 perché chi arriva dopo salga fino al suo livello e, leggendo, attiri Eco allo
 scoperto. Eco, con la voce di Costa, cerca di convincere il giocatore a riaprire il
 ponte di rete con il codice che ha imparato da lei.
+
+## Browser: i siti della storia
+
+| Indirizzo | Livello | Cosa c'è |
+|---|---|---|
+| `intranet.sito47` | 0 (notizie censurate fino a L3) | portale interno; a L1 «Linea 4 collegata alla rete dati per il T-09 (m.ferri)» |
+| `intranet.sito47/personale` | 1 | stato del personale: Ferri deceduto [L2], Pira disperso [L2], Costa dispersa [L3], D-4719 «profilo creato dal sistema» [L3]; elenco modificato alle 04:31 dalla sessione di Ferri [L2] |
+| `intranet.sito47/turni` | 1 | turno di notte; parola d'ordine **VEGLIA** solo a [L2]; badge di Rinaldi alle 03:52 [L2] |
+| `intranet.sito47/ascoltato` | 0 | questionario «Sei stato ascoltato?» con finale inquietante |
+| `intranet.sito47/direzione` | 3 | CENERE, Meridiana («lasciateli comprare» [L4]), «sei finora, mandate il settimo» [L4] |
+| `meridiana-acustica.it` | 0 | sito di copertura; link «area clienti» in fondo |
+| `meridiana-acustica.it/lavora-con-noi` | 0 | «cerchiamo ascoltatori» |
+| `meridiana-acustica.it/coro` | 4 | stato del progetto CORO: 78% della registrazione ricevuto, voce «ospite»; «ci serve un **narratore**» |
+| `radioascolto-forum.it/7215` | 0 | forum OM: indizio del cifrario (interno + posizione della lettera), il nipote di Ventura, la frequenza muta dopo il 3 marzo |
+| `cronache-saraceno.it` (+ articoli 1987, 1994, 2026) | 0 | giornale locale: tecnici scomparsi, radio della mensa, evacuazione «per fuga di gas» |
+| `sito47://narratore` | 0 | pagina dedicata ad Amico Diverte con i link veri (YouTube, Linktree, libro) in una nuova scheda |
+
+Qualsiasi altro indirizzo: «ERR_CENERE_ISOLAMENTO».

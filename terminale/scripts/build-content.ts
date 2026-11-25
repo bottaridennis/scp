@@ -35,6 +35,7 @@ import type {
   Segment,
   ArchiveConfig,
   CameraEntry,
+  WebEntry,
   RadioEntry,
   VoiceEntry,
   Sealed,
@@ -453,6 +454,27 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     voci.push({ id: path.basename(file, '.md'), l: level, cond: { lettura, evento }, ...(await sealLevel({ nome: String(front.nome ?? '???'), testo }, level, where, body)) });
   }
 
+  const web: WebEntry[] = [];
+  for (const file of await walk(path.join(CONTENT, 'web'))) {
+    const where = rel(file);
+    const { front, body } = parseFrontmatter(await readFile(file, 'utf8'), where);
+    const u = normalizeUrl(String(front.indirizzo ?? ''));
+    if (!u) throw new ContentError(`${where}: manca "indirizzo"`);
+    if (web.some((w) => w.u === u)) throw new ContentError(`${where}: indirizzo "${u}" duplicato`);
+    const level = asLevel(front.livello, where);
+    const v = str(front.dopo_evento);
+    if (v) eventRefs.push({ where, id: v });
+    const sl = str(front.segnalibro);
+    const testo = await segmented(body, level, where);
+    web.push({
+      u,
+      l: level,
+      ...(v ? { v } : {}),
+      ...(sl ? { s: { t: sl, n: String(front.nota ?? u) } } : {}),
+      ...(await sealLevel({ titolo: String(front.titolo ?? u), testo }, level, where, body)),
+    });
+  }
+
   const camere: CameraEntry[] = [];
   for (const file of await walk(path.join(CONTENT, 'telecamere'))) {
     const where = rel(file);
@@ -515,6 +537,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     radio,
     voci,
     camere,
+    web,
   };
   const json = JSON.stringify(manifest);
 
@@ -560,4 +583,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.error(err instanceof ContentError ? `✗ ${err.message}` : err);
     process.exit(1);
   });
+}
+
+/** Addresses are compared without scheme, "www." and trailing slash, case-insensitively. */
+function normalizeUrl(raw: string): string {
+  return raw.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
 }

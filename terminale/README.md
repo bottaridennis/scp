@@ -88,9 +88,9 @@ richiesto.
 
 ## Easter egg «Il Narratore»
 
-Omaggio ad Amico Diverte. Le app **Podcast** e **Browser** (`src/os/apps/web.ts`) usano gli
-embed ufficiali di Spotify e YouTube (`youtube-nocookie.com`); i contenuti esterni si caricano
-solo quando si apre l'app. Gli ID degli show e del canale sono in cima al file.
+Omaggio ad Amico Diverte. L'app **Podcast** (`src/os/apps/web.ts`) usa l'embed ufficiale di
+Spotify, caricato solo quando si apre l'app; il **Browser** ha una pagina dedicata
+(`sito47://narratore`) con i suoi link veri, che si aprono in una nuova scheda.
 
 ## Struttura
 
@@ -261,6 +261,23 @@ giorno: 03-03            # facoltativo: solo in quel giorno (MM-GG)
 ritardo: 15
 ---
 Testo del messaggio.
+```
+
+### Pagine web (app Browser)
+
+```markdown
+# content/web/<cartella>/<nome>.md
+---
+indirizzo: intranet.sito47/turni   # senza https:// né www.
+titolo: Turni e parole d'ordine
+livello: 1                         # 403 sotto questo livello
+segnalibro: Intranet del Sito-47   # facoltativo: compare nella pagina iniziale
+nota: intranet.sito47 · …          # sottotitolo del segnalibro
+dopo_evento: …                     # facoltativo
+---
+# Titolo
+Testo con **grassetto**, *corsivo*, `codice`, [link](altro.indirizzo/pagina),
+elenchi `- `, tabelle `| a | b |`, riquadri `> ` e censura [[L2: …]].
 ```
 
 ### Radio, fonoteca, telecamere
