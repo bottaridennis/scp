@@ -11,7 +11,7 @@ import {
   open,
   saltFor,
 } from './crypto-core.ts';
-import type { DocBody, DocMeta, EventEntry, EventPayload, FileEntry, Keyring, MailEntry, Manifest } from './types.ts';
+import type { DocBody, DocMeta, EventEntry, EventPayload, FileEntry, Keyring, MailEntry, Manifest, Sealed } from './types.ts';
 import type { Store } from './state.ts';
 
 export const GUEST = 'ospite';
@@ -247,6 +247,16 @@ export class Game {
         if (ev.l >= 1 && d === 0) return this.level >= ev.l ? (this.levelKeys.get(ev.l) ?? null) : null;
         return cmdKey ?? null;
       });
+      return 'value' in res ? res.value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Opens a value sealed with a single level key (radio, voices, cameras). */
+  async openLevel<T>(sealed: Sealed<T>, level: number): Promise<T | null> {
+    try {
+      const res = await open<T>(sealed, () => (this.level >= level ? (this.levelKeys.get(level) ?? null) : null));
       return 'value' in res ? res.value : null;
     } catch {
       return null;

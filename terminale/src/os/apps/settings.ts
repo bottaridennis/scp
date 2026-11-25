@@ -1,5 +1,5 @@
 /** Settings: wallpaper, terminal phosphor, sounds, progress reset, credits. */
-import { setAudio, setTheme } from '../../engine/shell.ts';
+import { setAudio, setOsTheme, setTheme } from '../../engine/shell.ts';
 import type { AppDef } from '../desktop.ts';
 import { h } from '../dom.ts';
 import { ICONS } from '../icons.ts';
@@ -21,6 +21,14 @@ export const settingsApp: AppDef = {
       h(
         'div',
         { class: 'app-pad settings' },
+        h(
+          'fieldset',
+          { class: 'group' },
+          h('legend', {}, 'Aspetto del sistema'),
+          radio('os', 'classico', 'Classico (1999)', s.os !== 'moderno', () => setOsTheme(session, 'classico')),
+          radio('os', 'moderno', 'Moderno (2026)', s.os === 'moderno', () => setOsTheme(session, 'moderno')),
+          h('p', { class: 'muted' }, 'Dal Terminale: salto 2026 / salto 1999.'),
+        ),
         h(
           'fieldset',
           { class: 'group' },

@@ -34,6 +34,10 @@ import type {
   Manifest,
   Segment,
   ArchiveConfig,
+  CameraEntry,
+  RadioEntry,
+  VoiceEntry,
+  Sealed,
 } from '../src/engine/types.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,6 +58,7 @@ type GameConfig = {
   utenti: { nome: string; nome_completo: string; ruolo: string; livello: number; password: string; nascosto?: boolean }[];
   logo: string[];
   boot: string[];
+  intro?: { titolo: string; testo: string[] };
   crediti: string[];
   archivio?: ArchiveConfig;
 };
@@ -239,6 +244,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
   const fsRoot = path.join(CONTENT, 'fs');
 
   const fileEvents: { where: string; id: string }[] = [];
+  const repairRefs: { where: string; path: string }[] = [];
   const all = await walk(fsRoot, true);
   const imageFiles = new Map(all.filter((f) => IMAGE_RE.test(f)).map((f) => ['/' + path.relative(fsRoot, f).split(path.sep).join('/'), f]));
   const sidecars = new Set<string>();
@@ -273,6 +279,10 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     const meta: DocBody['m'] = {};
     if (front.autore) meta.autore = String(front.autore);
     if (front.modificato) meta.modificato = String(front.modificato);
+    if (front.ripara) {
+      meta.ripara = String(front.ripara);
+      repairRefs.push({ where, path: meta.ripara });
+    }
     let plain: PlainDoc;
     let size: number;
     if (image) {
@@ -292,6 +302,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
       s: size,
       b: await sealDoc(plain, level, chiave, `file:${vpath}`, where, meta),
       ...(dopo ? { v: dopo } : {}),
+      ...(front.corrotto === true ? { c: true } : {}),
     };
     knownPaths.add(vpath);
     if (owner) {
@@ -321,7 +332,13 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     const plain = extractSegments(body, level, where);
     const dopo = str(front.dopo_evento);
     if (dopo) mailEvents.push({ where, id: dopo });
+    const replies: { t: string; s: string }[] = [];
+    for (let i = 1; i <= 4; i++) {
+      const r = str(front[`risposta${i}`]);
+      if (r) replies.push({ t: r, s: `risposta-${owner}-${parts[1].replace(/\.md$/, '')}-${i}` });
+    }
     const entry: MailEntry = {
+      ...(replies.length ? { r: replies } : {}),
       id: parts[1].replace(/\.md$/, ''),
       da: String(front.da),
       a: str(front.a) ?? owner,
@@ -357,6 +374,10 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     if (lettura && !knownPaths.has(lettura)) throw new ContentError(`${where}: dopo_lettura "${lettura}" non esiste`);
     if (login && !users.has(login)) throw new ContentError(`${where}: dopo_login "${login}" non è un utente`);
     if (evento) eventRefs.push({ where, id: evento });
+    const ora = str(front.ora);
+    if (ora && !/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(ora)) throw new ContentError(`${where}: ora deve essere HH:MM-HH:MM`);
+    const giorno = str(front.giorno);
+    if (giorno && !/^\d{2}-\d{2}$/.test(giorno)) throw new ContentError(`${where}: giorno deve essere MM-GG`);
 
     const plain = extractSegments(body, level, where);
     const payload: EventPayload = { da: str(front.da), testo: { t: plain.text, g: [] } };
@@ -378,13 +399,79 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
       id,
       l: level,
       tipo,
-      cond: { lettura, login, evento, cmd },
+      cond: { lettura, login, evento, cmd, ora: str(front.ora), giorno: str(front.giorno) },
       ritardo: Number(front.ritardo ?? 0) || 0,
       b: await seal(payload, layers),
     });
   }
   for (const ref of eventRefs) {
-    if (!eventIds.has(ref.id)) throw new ContentError(`${ref.where}: l'evento "${ref.id}" non esiste`);
+    if (!eventIds.has(ref.id) && !ref.id.startsWith('risposta-')) throw new ContentError(`${ref.where}: l'evento "${ref.id}" non esiste`);
+  }
+  for (const ref of repairRefs) {
+    if (!knownPaths.has(ref.path)) throw new ContentError(`${ref.where}: ripara "${ref.path}" non esiste`);
+  }
+
+  /* Radio, voices, cameras ------------------------------------------ */
+  async function sealLevel<T>(value: T, level: number, where: string, text: string): Promise<{ b: Sealed<T> }> {
+    if (level >= 1) lockedTexts.push({ text, where });
+    return { b: await seal(value, level >= 1 ? [levelKeys.get(level)!] : []) };
+  }
+  async function segmented(body: string, level: number, where: string): Promise<DocBody> {
+    const plain = extractSegments(body, level, where);
+    const g: Segment[] = [];
+    for (const seg of plain.segments) {
+      g.push({ l: seg.level, n: [...seg.text].length, x: seg.bang, d: await encryptText(levelKeys.get(seg.level)!, seg.text) });
+    }
+    return { t: plain.text, g };
+  }
+
+  const radio: RadioEntry[] = [];
+  for (const file of await walk(path.join(CONTENT, 'radio'))) {
+    const where = rel(file);
+    const { front, body } = parseFrontmatter(await readFile(file, 'utf8'), where);
+    const f = Number(String(front.frequenza ?? '').replace(',', '.'));
+    if (!f) throw new ContentError(`${where}: manca "frequenza" (MHz)`);
+    const level = asLevel(front.livello, where);
+    const v = str(front.dopo_evento);
+    if (v) eventRefs.push({ where, id: v });
+    const testo = await segmented(body, level, where);
+    radio.push({ f, l: level, ...(v ? { v } : {}), ...(await sealLevel({ nome: String(front.nome ?? 'Trasmissione'), testo }, level, where, body)) });
+  }
+
+  const voci: VoiceEntry[] = [];
+  for (const file of await walk(path.join(CONTENT, 'fonoteca'))) {
+    const where = rel(file);
+    const { front, body } = parseFrontmatter(await readFile(file, 'utf8'), where);
+    const level = asLevel(front.livello, where);
+    const lettura = str(front.dopo_lettura);
+    const evento = str(front.dopo_evento);
+    if (lettura && !knownPaths.has(lettura)) throw new ContentError(`${where}: dopo_lettura "${lettura}" non esiste`);
+    if (evento) eventRefs.push({ where, id: evento });
+    const testo = await segmented(body, level, where);
+    voci.push({ id: path.basename(file, '.md'), l: level, cond: { lettura, evento }, ...(await sealLevel({ nome: String(front.nome ?? '???'), testo }, level, where, body)) });
+  }
+
+  const camere: CameraEntry[] = [];
+  for (const file of await walk(path.join(CONTENT, 'telecamere'))) {
+    const where = rel(file);
+    const { front, body } = parseFrontmatter(await readFile(file, 'utf8'), where);
+    const level = asLevel(front.livello, where);
+    const v = str(front.dopo_evento);
+    if (v) eventRefs.push({ where, id: v });
+    for (const k of ['nome', 'scena', 'comportamento'] as const) if (!front[k]) throw new ContentError(`${where}: manca "${k}"`);
+    const messaggi = body.split('\n').map((l) => l.trim()).filter(Boolean);
+    camere.push({
+      id: path.basename(file, '.md'),
+      nome: String(front.nome),
+      l: level,
+      scena: String(front.scena),
+      comportamento: String(front.comportamento),
+      ...(v ? { v } : {}),
+      ...(await sealLevel({ messaggi }, level, where, body)),
+    });
+  }
+  for (const ref of eventRefs) {
+    if (!eventIds.has(ref.id) && !ref.id.startsWith('risposta-')) throw new ContentError(`${ref.where}: l'evento "${ref.id}" non esiste`);
   }
 
   /* Users ----------------------------------------------------------- */
@@ -417,11 +504,15 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
       boot: config.boot ?? [],
       crediti: config.crediti ?? [],
       archivio: validateArchive(config.archivio),
+      ...(config.intro ? { intro: config.intro } : {}),
     },
     check,
     utenti,
     files: publicFiles,
     eventi: events,
+    radio,
+    voci,
+    camere,
   };
   const json = JSON.stringify(manifest);
 

@@ -16,6 +16,10 @@ quasi quarant'anni e lui è ancora lì dentro, a parlare.
 Anna ha sospeso i test. Dice che non possiamo studiare qualcosa che ci
 studia a sua volta. Ha ragione, ma ho bisogno di T-09.
 
+27/02, sera
+Anna ha tolto il mio nome dall'articolo. Due anni di lavoro. Mi ha detto
+«dopo T-07 non posso». Va bene. T-09 lo firmo da solo.
+
 01/03
 Anna ha approvato T-09, solo ascolto. Giulia non mi dà la parola del
 turno. La troverò da solo.

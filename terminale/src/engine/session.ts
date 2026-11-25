@@ -42,6 +42,7 @@ export class Session {
       await this.presenter(ev, payload, text);
     });
     this.events.onFired = () => this.notify();
+    this.events.startClock();
     this.sound.enabled = this.state.settings.audio;
   }
 
@@ -120,6 +121,30 @@ export class Session {
 
   closeAccount(acc: Game) {
     if (acc !== this.desktop) this.accounts.delete(acc);
+  }
+
+  /** Accounts currently open (desktop and terminals). */
+  openAccounts() {
+    return [...this.accounts];
+  }
+
+  /** The highest clearance among open accounts. */
+  highest() {
+    return [...this.accounts].sort((a, b) => b.level - a.level)[0];
+  }
+
+  /** Sends a mail reply: records its signal, which may fire events. */
+  reply(user: string, mailId: string, signal: string) {
+    const key = `${user}/${mailId}`;
+    if (this.state.replied.includes(key)) return false;
+    this.state.replied.push(key);
+    this.events.signal(signal);
+    return true;
+  }
+
+  /** Voices of the catalogue unlocked so far. */
+  voiceUnlocked(v: { cond: { lettura?: string; evento?: string } }) {
+    return (!v.cond.lettura || this.state.read.includes(v.cond.lettura)) && (!v.cond.evento || this.state.fired.includes(v.cond.evento));
   }
 
   /* Progress ------------------------------------------------------ */

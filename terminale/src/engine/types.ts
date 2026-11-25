@@ -19,7 +19,7 @@ export type Segment = {
 };
 
 /** Document properties (shown by `stat` and "Proprietà"), encrypted with the document. */
-export type DocMeta = { autore?: string; modificato?: string; didascalia?: string };
+export type DocMeta = { autore?: string; modificato?: string; didascalia?: string; ripara?: string };
 
 /** A document body: text with segment markers (\u0001<index>\u0001) plus the segments. Images keep a data URL in `t`. */
 export type DocBody = { t: string; g: Segment[]; m?: DocMeta };
@@ -37,6 +37,8 @@ export type FileEntry = {
   b: Sealed<DocBody>;
   /** Only present after this event has fired. */
   v?: string;
+  /** Corrupted by Eco: shown garbled until repaired with `ripara`. */
+  c?: boolean;
 };
 
 export type MailEntry = {
@@ -49,6 +51,8 @@ export type MailEntry = {
   dopo?: string;
   l: number;
   b: Sealed<DocBody>;
+  /** Possible replies: text shown and signal recorded (fires events with dopo_evento). */
+  r?: { t: string; s: string }[];
 };
 
 export type Keyring = {
@@ -75,6 +79,10 @@ export type EventEntry = {
     evento?: string;
     /** Hash prefix of the command phrase (the phrase itself is never stored). */
     cmd?: string;
+    /** Local time window, e.g. "03:00-03:10". */
+    ora?: string;
+    /** Local date, "MM-DD". */
+    giorno?: string;
   };
   ritardo: number;
   b: Sealed<EventPayload>;
@@ -93,7 +101,12 @@ export type Manifest = {
     crediti: string[];
     /** Optional mount of the real SCP archive (public data, levels are a game rule). */
     archivio?: ArchiveConfig;
+    /** Briefing shown before the first login. */
+    intro?: { titolo: string; testo: string[] };
   };
+  radio: RadioEntry[];
+  voci: VoiceEntry[];
+  camere: CameraEntry[];
   /** Per-level check values used to validate keys restored from localStorage. */
   check: Record<string, Envelope>;
   /** Users and their keyrings, each sealed with PBKDF2(password). */
@@ -111,4 +124,38 @@ export type ArchiveConfig = {
   livello_sezioni: number;
   /** "bloccati": shown with a lock and [CLASSIFICATO]; "nascosti": not listed. */
   sopra_livello: 'bloccati' | 'nascosti';
+};
+
+/* Radio, voice catalogue, cameras ------------------------------------ */
+
+export type RadioPayload = { nome: string; testo: DocBody };
+export type RadioEntry = {
+  /** Frequency in MHz. */
+  f: number;
+  l: number;
+  /** Only on air after this event. */
+  v?: string;
+  b: Sealed<RadioPayload>;
+};
+
+export type VoicePayload = { nome: string; testo: DocBody };
+export type VoiceEntry = {
+  id: string;
+  l: number;
+  cond: { lettura?: string; evento?: string };
+  b: Sealed<VoicePayload>;
+};
+
+export type CameraPayload = { messaggi: string[] };
+export type CameraEntry = {
+  id: string;
+  nome: string;
+  l: number;
+  /** Scene drawn by the camera app. */
+  scena: string;
+  /** Scripted behaviour. */
+  comportamento: string;
+  /** Only visible after this event. */
+  v?: string;
+  b: Sealed<CameraPayload>;
 };

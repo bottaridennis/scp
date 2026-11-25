@@ -14,6 +14,8 @@
       try {
         var t = localStorage.getItem('terminale:tema');
         if (t === 'ambra' || t === 'verde') document.documentElement.dataset.phosphor = t;
+        var o = localStorage.getItem('terminale:os');
+        if (o === 'moderno' || o === 'classico') document.documentElement.dataset.os = o;
       } catch (e) {}
     </script>
   </head>

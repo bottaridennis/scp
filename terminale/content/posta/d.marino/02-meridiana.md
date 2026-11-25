@@ -2,6 +2,8 @@
 da: ordini@meridiana-acustica.example
 oggetto: Ordine 47 — conferma
 data: 2026-02-15 09:12
+risposta1: La registrazione è pronta.
+risposta2: Non c'è più niente da vendere.
 ---
 Gentile fornitore,
 confermiamo la ricezione del primo campione. Qualità eccellente.

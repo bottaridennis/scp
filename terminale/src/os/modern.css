@@ -1,0 +1,235 @@
+/*
+ * FONDAZIONE OS — "Moderno (2026)" theme. Same desktop, same apps:
+ * only the look changes (rounded corners, translucent surfaces, centered taskbar).
+ * Activated with data-os="moderno" on <html> (command `salto`, Impostazioni).
+ */
+html.os-switching * { transition: background-color 0.6s, border-radius 0.6s, box-shadow 0.6s, color 0.6s; }
+
+:root[data-os="moderno"] {
+  --face: #f3f3f3;
+  --face-hi: #ffffff;
+  --face-lo: #d6d6d6;
+  --face-dk: #b8b8b8;
+  --ink: #1b1b1b;
+  --muted: #616161;
+  --select: #dbe8f7;
+  --select-ink: #0f3a6b;
+  --accent-blue: #0067c0;
+  --radius: 8px;
+  --glass: rgb(243 243 243 / 0.78);
+  --glass-strong: rgb(249 249 249 / 0.92);
+  --taskbar-h: 48px;
+  --ui-font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Surfaces: no bevels, soft borders and shadows */
+[data-os="moderno"] .bevel,
+[data-os="moderno"] .win,
+[data-os="moderno"] .btn,
+[data-os="moderno"] .taskbar,
+[data-os="moderno"] .startmenu,
+[data-os="moderno"] .toast,
+[data-os="moderno"] .login-box,
+[data-os="moderno"] .start-btn,
+[data-os="moderno"] .task,
+[data-os="moderno"] .win-btn {
+  box-shadow: none;
+}
+[data-os="moderno"] .sunken,
+[data-os="moderno"] .field,
+[data-os="moderno"] .list,
+[data-os="moderno"] .login-profiles,
+[data-os="moderno"] .cam-list,
+[data-os="moderno"] .places,
+[data-os="moderno"] .mail-reader {
+  box-shadow: none;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+}
+[data-os="moderno"] .field { background: #fff; border-bottom: 2px solid #8a8a8a; padding: 6px 8px; }
+[data-os="moderno"] .field:focus { border-bottom-color: var(--accent-blue); outline: none; }
+[data-os="moderno"] .btn {
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  background: #fbfbfb;
+  padding: 6px 14px;
+}
+[data-os="moderno"] .btn:hover { background: #f5f5f5; }
+[data-os="moderno"] .btn:active { box-shadow: none; background: #ededed; }
+[data-os="moderno"] .btn-default { outline: none; background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; font-weight: 600; }
+[data-os="moderno"] .btn-default:hover { background: #1975c5; }
+[data-os="moderno"] :focus-visible { outline: 2px solid #000; outline-offset: 1px; border-radius: 4px; }
+
+/* Desktop wallpapers: soft abstract gradients */
+[data-os="moderno"] .wall-fondazione { background: radial-gradient(60% 70% at 70% 60%, #6aa9e8 0%, transparent 70%), radial-gradient(50% 60% at 25% 35%, #9bc7f0 0%, transparent 70%), linear-gradient(160deg, #cfe3f7 0%, #7fb0e6 55%, #3d79c2 100%); }
+[data-os="moderno"] .wall-griglia { background: radial-gradient(55% 65% at 60% 55%, #7f8bd6 0%, transparent 70%), linear-gradient(150deg, #dfe4f7 0%, #8e9ad8 60%, #4b56a8 100%); }
+[data-os="moderno"] .wall-notte { background: radial-gradient(60% 70% at 65% 60%, #2f5aa0 0%, transparent 70%), linear-gradient(160deg, #0f1d33 0%, #1a2e52 60%, #0a1222 100%); }
+[data-os="moderno"] .wall-tinta { background: linear-gradient(160deg, #e9eef3, #c9d5df); }
+[data-os="moderno"] .desk-mark { color: rgb(255 255 255 / 0.22); font-family: var(--ui-font); font-weight: 600; letter-spacing: 0.3em; }
+[data-os="moderno"] .desk-icon { border-radius: 6px; }
+[data-os="moderno"] .desk-icon:hover, [data-os="moderno"] .desk-icon:focus-visible { border: 1px solid rgb(255 255 255 / 0.35); background: rgb(255 255 255 / 0.18); outline: none; }
+
+/* Windows */
+[data-os="moderno"] .win {
+  padding: 0;
+  border-radius: var(--radius);
+  border: 1px solid rgb(0 0 0 / 0.12);
+  background: var(--glass-strong);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22), 0 2px 6px rgb(0 0 0 / 0.12);
+  overflow: hidden;
+}
+[data-os="moderno"] .win.is-max { border-radius: 0; }
+[data-os="moderno"] .win-titlebar,
+[data-os="moderno"] .win.is-active .win-titlebar {
+  height: 34px;
+  padding: 0 0 0 12px;
+  background: transparent;
+  color: #1b1b1b;
+  font-weight: 400;
+  font-size: 12px;
+}
+[data-os="moderno"] .win:not(.is-active) .win-titlebar { color: #8a8a8a; }
+[data-os="moderno"] .win-btns { gap: 0; align-self: stretch; }
+[data-os="moderno"] .win-btn {
+  width: 46px;
+  height: 100%;
+  border-radius: 0;
+  background: transparent;
+  font: 400 13px/1 var(--ui-font);
+  color: inherit;
+}
+[data-os="moderno"] .win-btn:hover { background: rgb(0 0 0 / 0.06); }
+[data-os="moderno"] .win-btn.is-close:hover { background: #c42b1c; color: #fff; }
+[data-os="moderno"] .win-btn.is-close { margin-left: 0; }
+[data-os="moderno"] .win-btn.is-min::before { content: "─"; transform: none; font-size: 11px; }
+[data-os="moderno"] .win-btn.is-max::before { content: "☐"; font-size: 14px; }
+[data-os="moderno"] .win-btn.is-close::before { content: "✕"; font-size: 12px; }
+[data-os="moderno"] .win-body { margin-top: 0; background: #f9f9f9; }
+[data-os="moderno"] .win-body.is-terminal { background: #000; }
+[data-os="moderno"] .win-resize { background: none; }
+[data-os="moderno"] .toolbar { border-bottom: 1px solid #e5e5e5; box-shadow: none; padding: 6px 8px; gap: 6px; }
+[data-os="moderno"] .statusbar { border-top: 1px solid #e5e5e5; box-shadow: none; }
+[data-os="moderno"] .file-row, [data-os="moderno"] .place, [data-os="moderno"] .cam-item, [data-os="moderno"] .menu-item { border-radius: 4px; }
+[data-os="moderno"] .file-row.is-selected, [data-os="moderno"] .place:hover, [data-os="moderno"] .cam-item.is-active { background: var(--select); color: var(--select-ink); }
+[data-os="moderno"] .places { background: transparent; border: 0; }
+[data-os="moderno"] .group { border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: none; background: #fff; padding: 10px 14px 12px; }
+[data-os="moderno"] .doc-scroll { background: #e9edf1; }
+[data-os="moderno"] .doc-paper { border-radius: 6px; box-shadow: 0 2px 10px rgb(0 0 0 / 0.12); }
+
+/* Taskbar: translucent, centered */
+[data-os="moderno"] .taskbar {
+  justify-content: center;
+  gap: 4px;
+  background: var(--glass);
+  backdrop-filter: blur(30px) saturate(1.5);
+  border-top: 1px solid rgb(0 0 0 / 0.08);
+  padding: 4px 12px max(4px, env(safe-area-inset-bottom));
+}
+[data-os="moderno"] .start-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-blue);
+}
+[data-os="moderno"] .start-btn > span:not(.ico) { display: none; }
+[data-os="moderno"] .start-btn .ico { width: 24px; height: 24px; }
+[data-os="moderno"] .start-btn:hover, [data-os="moderno"] .task:hover { background: rgb(255 255 255 / 0.7); }
+[data-os="moderno"] .tasks { flex: 0 1 auto; gap: 4px; }
+[data-os="moderno"] .task {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+[data-os="moderno"] .task .ico { width: 22px; height: 22px; }
+[data-os="moderno"] .task span:last-child { display: none; }
+[data-os="moderno"] .task::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  width: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: #8a8a8a;
+  transform: translateX(-50%);
+}
+[data-os="moderno"] .task.is-active { background: rgb(255 255 255 / 0.75); box-shadow: none; font-weight: 400; }
+[data-os="moderno"] .task.is-active::after { width: 16px; background: var(--accent-blue); }
+[data-os="moderno"] .tray {
+  position: absolute;
+  right: 10px;
+  top: 4px;
+  bottom: 4px;
+  height: auto;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 6px;
+  font-size: 12px;
+}
+[data-os="moderno"] .tray-level { clip-path: none; border-radius: 4px; border: 0; }
+
+/* Start menu: centered panel with a grid of pinned apps */
+[data-os="moderno"] .startmenu {
+  left: 50%;
+  bottom: calc(var(--taskbar-h) + 12px);
+  width: min(560px, calc(100% - 24px));
+  transform: translateX(-50%);
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgb(0 0 0 / 0.1);
+  background: var(--glass-strong);
+  backdrop-filter: blur(30px) saturate(1.5);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.25);
+  animation: modern-menu 0.18s ease-out;
+}
+@keyframes modern-menu { from { transform: translate(-50%, 12px); opacity: 0; } }
+[data-os="moderno"] .menu-side { display: none; }
+[data-os="moderno"] .menu-main {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 20px 24px 12px;
+}
+[data-os="moderno"] .menu-pinned-title { display: block; grid-column: 1 / -1; order: -1; border: 0; padding: 0 4px 6px; font-size: 13px; font-weight: 600; color: var(--ink); }
+[data-os="moderno"] .menu-user { order: 99; grid-column: 1 / 3; border: 0; margin: 10px 0 0; padding: 12px 4px 4px; }
+[data-os="moderno"] .menu-sep { grid-column: 1 / -1; border-top: 0; font-size: 13px; font-weight: 600; color: var(--ink); padding: 12px 4px 4px; }
+[data-os="moderno"] .menu-sep:empty { border-top: 1px solid #e5e5e5; padding: 0; margin: 8px -24px 0; order: 98; }
+[data-os="moderno"] .menu-item.is-app { flex-direction: column; gap: 6px; padding: 12px 4px; text-align: center; font-size: 12px; }
+[data-os="moderno"] .menu-item.is-app .ico { width: 28px; height: 28px; }
+[data-os="moderno"] .menu-item.is-app span { white-space: normal; }
+[data-os="moderno"] .menu-item.is-recent { grid-column: span 2; }
+[data-os="moderno"] .menu-item.is-power { order: 100; justify-content: center; margin-top: 10px; }
+[data-os="moderno"] .menu-item:hover, [data-os="moderno"] .menu-item:focus-visible { background: rgb(0 0 0 / 0.05); color: inherit; }
+
+/* Notifications and dialogs */
+[data-os="moderno"] .toast { border-radius: 8px; background: var(--glass-strong); backdrop-filter: blur(24px); border: 1px solid rgb(0 0 0 / 0.08); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); }
+[data-os="moderno"] .toast-alert { background: rgb(42 12 12 / 0.92); color: #ffd6d0; border-color: #c22; }
+
+/* Login screen */
+[data-os="moderno"] .login { background: radial-gradient(60% 70% at 70% 60%, #6aa9e8 0%, transparent 70%), linear-gradient(160deg, #cfe3f7 0%, #7fb0e6 55%, #3d79c2 100%); }
+[data-os="moderno"] .login-box { border-radius: 12px; overflow: hidden; background: var(--glass-strong); backdrop-filter: blur(30px); box-shadow: 0 20px 60px rgb(0 0 0 / 0.25); }
+[data-os="moderno"] .login-head { background: transparent; color: var(--ink); justify-content: center; flex-direction: column; text-align: center; padding-top: 24px; }
+[data-os="moderno"] .login-head .ico { color: var(--accent-blue); }
+[data-os="moderno"] .login-profiles { border: 0; background: transparent; }
+[data-os="moderno"] .profile { border-radius: 6px; }
+[data-os="moderno"] .profile.is-selected, [data-os="moderno"] .profile:focus-visible { background: var(--select); color: var(--select-ink); }
+
+/* Intro briefing */
+[data-os="moderno"] .intro-overlay { background: rgb(20 40 70 / 0.55); backdrop-filter: blur(6px); }
+
+@media (max-width: 760px) {
+  [data-os="moderno"] .win { border-radius: 0; }
+  [data-os="moderno"] .tray { position: static; }
+  [data-os="moderno"] .taskbar { justify-content: space-between; }
+  [data-os="moderno"] .menu-main { grid-template-columns: repeat(3, 1fr); padding: 16px; }
+}

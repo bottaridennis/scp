@@ -86,6 +86,9 @@ export class GameFS implements FileSystem {
     if (res.status === 'denied') return { ok: false, reason: 'denied', message: `ACCESSO NEGATO — Livello ${res.level} richiesto` };
     if (res.status === 'encrypted') return { ok: false, reason: 'encrypted', message: `${basename(path)}: file cifrato. Usa: decrypt ${basename(path)} <chiave>` };
     this.onRead(path);
+    if (f.c && !acc.store.state.repaired.includes(path)) {
+      return { ok: true, kind: 'text', text: corrupt(res.text), props: res.meta };
+    }
     if (kindOf(path) === 'image') return { ok: true, kind: 'image', src: res.text, caption: res.meta?.didascalia ?? basename(path) };
     return { ok: true, kind: 'text', text: res.text, props: res.meta };
   }
@@ -106,4 +109,13 @@ export class GameFS implements FileSystem {
   home(acc: Account) {
     return acc.user === GUEST ? '/' : acc.homeOf(acc.user);
   }
+}
+
+const GLYPHS = '▓▒░█#%&@$?!<>/\\|~^';
+
+/** Eco's corruption: a different garble at every reading. */
+export function corrupt(text: string): string {
+  return [...text]
+    .map((c) => (/\s/.test(c) || Math.random() > 0.42 ? c : GLYPHS[Math.floor(Math.random() * GLYPHS.length)]))
+    .join('');
 }

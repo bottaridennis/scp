@@ -1,6 +1,8 @@
 /** Progress saved in localStorage. Every access is wrapped: storage may be unavailable. */
 
 export type Theme = 'verde' | 'ambra';
+/** Look of FONDAZIONE OS: late-90s institutional or modern (2026). */
+export type OsTheme = 'classico' | 'moderno';
 
 export type SaveState = {
   user: string;
@@ -15,9 +17,14 @@ export type SaveState = {
   logins: string[];
   mailRead: string[];
   ending: string | null;
+  /** Corrupted files repaired with `ripara`. */
+  repaired: string[];
+  /** Mail replies already sent ("user/mailId"). */
+  replied: string[];
+  introSeen: boolean;
   bootSeen: boolean;
   startedAt: number;
-  settings: { theme: Theme; audio: boolean };
+  settings: { theme: Theme; audio: boolean; os: OsTheme };
 };
 
 function fresh(): SaveState {
@@ -32,9 +39,12 @@ function fresh(): SaveState {
     logins: [],
     mailRead: [],
     ending: null,
+    repaired: [],
+    replied: [],
+    introSeen: false,
     bootSeen: false,
     startedAt: Date.now(),
-    settings: { theme: 'verde', audio: false },
+    settings: { theme: 'verde', audio: false, os: 'classico' },
   };
 }
 

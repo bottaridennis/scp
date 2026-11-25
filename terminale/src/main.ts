@@ -1,5 +1,6 @@
 import './style.css';
 import './os/os.css';
+import './os/modern.css';
 import { Game } from './engine/game.ts';
 import { Session } from './engine/session.ts';
 import { Store } from './engine/state.ts';
@@ -14,6 +15,10 @@ import { LoginScreen } from './os/login.ts';
 import { ScpFS } from './archivio/scp-fs.ts';
 import { mailApp } from './os/apps/mail.ts';
 import { trashApp } from './os/apps/trash.ts';
+import { camerasApp } from './os/apps/cameras.ts';
+import { radioApp } from './os/apps/radio.ts';
+import { voicesApp } from './os/apps/voices.ts';
+import { introApp, showIntro } from './os/apps/intro.ts';
 import { installEventPresenter } from './os/events.ts';
 
 const DATA_URL = `${import.meta.env.BASE_URL}data/archivio.json`;
@@ -39,12 +44,13 @@ async function main() {
   document.title = manifest.meta.titolo;
   const store = new Store(manifest.id);
   document.documentElement.dataset.phosphor = store.state.settings.theme;
+  document.documentElement.dataset.os = store.state.settings.os ?? 'classico';
   const session = new Session(manifest, store);
   const archive = manifest.meta.archivio ? new ScpFS(manifest.meta.archivio) : null;
   if (archive) session.fs.mount(archive.mount, archive);
 
   const desktop = new Desktop(session, app);
-  for (const a of [explorerApp, mailApp, terminalApp, settingsApp, trashApp, viewerApp, imageApp]) desktop.register(a);
+  for (const a of [explorerApp, mailApp, terminalApp, camerasApp, radioApp, voicesApp, settingsApp, trashApp, introApp, viewerApp, imageApp]) desktop.register(a);
 
   installEventPresenter(session, desktop);
 
@@ -63,6 +69,7 @@ async function main() {
   };
 
   await runBoot(app, manifest, store);
+  if (!store.state.introSeen) await showIntro(session, app);
   showLogin();
 }
 

@@ -17,7 +17,7 @@ export const mailApp: AppDef = {
     const n = session.desktop.user === GUEST ? 0 : session.unreadMail();
     return n ? String(n) : '';
   },
-  launch({ session, win }) {
+  launch({ session, desktop, win }) {
     const acc = session.desktop;
     const list = h('div', { class: 'list mail-list', role: 'listbox', 'aria-label': 'Messaggi' });
     const reader = h('div', { class: 'mail-reader' });
@@ -48,8 +48,36 @@ export const mailApp: AppDef = {
         ),
         h('div', { class: 'mail-body' }, typedText(body)),
       );
+      const r = replies(m);
+      if (r) reader.append(r);
       session.markMailRead(acc.user, m.id);
       render();
+    }
+
+    function replies(m: MailEntry): HTMLElement | null {
+      if (!m.r?.length) return null;
+      const done = session.state.replied.includes(`${acc.user}/${m.id}`);
+      if (done) return h('div', { class: 'mail-replies muted' }, 'Risposta inviata.');
+      return h(
+        'div',
+        { class: 'mail-replies' },
+        h('strong', {}, 'Rispondi:'),
+        ...m.r.map((r) =>
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'btn mail-reply',
+              onclick: () => {
+                session.reply(acc.user, m.id, r.s);
+                desktop.toast('Posta', `Risposta inviata a ${m.da}.`);
+                void open(m);
+              },
+            },
+            r.t,
+          ),
+        ),
+      );
     }
 
     function render() {
