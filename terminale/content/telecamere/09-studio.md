@@ -1,0 +1,11 @@
+---
+nome: CAM-P1 · Studio di registrazione
+livello: 1
+scena: studio
+comportamento: studio
+---
+LABORATORIO ACUSTICO — SALA 2
+MICROFONO ACCESO · NESSUNO IN SALA
+«…E ALLORA, AMICI, SPEGNETE LA LUCE»
+LA SEDIA È STATA GIRATA VERSO IL MICROFONO
+IN ONDA DA 03:05:00

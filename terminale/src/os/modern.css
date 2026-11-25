@@ -233,3 +233,8 @@ html.os-switching * { transition: background-color 0.6s, border-radius 0.6s, box
   [data-os="moderno"] .taskbar { justify-content: space-between; }
   [data-os="moderno"] .menu-main { grid-template-columns: repeat(3, 1fr); padding: 16px; }
 }
+
+[data-os="moderno"] .pod-list, [data-os="moderno"] .br-view { border-radius: 8px; }
+[data-os="moderno"] .pod-item, [data-os="moderno"] .br-bookmark { border-radius: 6px; }
+[data-os="moderno"] .pod-item.is-active { background: var(--select); color: var(--select-ink); }
+[data-os="moderno"] .br-address { border-radius: 16px; padding: 5px 12px; }

@@ -6,6 +6,7 @@
 import type { Game } from './game.ts';
 import { GUEST } from './game.ts';
 import type { Session } from './session.ts';
+import { inTimeWindow } from './events.ts';
 import type { OsTheme, Theme } from './state.ts';
 import type { Line, Terminal } from './terminal.ts';
 import { basename, normalizePath, type ReadResult, type VNode } from './vfs.ts';
@@ -325,6 +326,27 @@ export class Shell {
         help: 'licenze e crediti',
         run: () => t.print(this.session.manifest.meta.crediti.join('\n'), { cps: 2000 }),
       },
+      // Easter egg (not listed in help): a tribute to a horror storyteller.
+      amicodiverte: {
+        usage: 'amicodiverte',
+        help: '',
+        run: async () => {
+          this.session.sound.alert('sistema');
+          await t.print('Riconoscimento vocale in corso ░▒▓▒░▒▓▒░', { cls: 'dim', cps: 40 });
+          await t.print(
+            [
+              { text: 'Narratore riconosciuto.', cls: 'hl' },
+              { text: 'Livello di autorizzazione: PODCAST' },
+              { text: 'Gli ascoltatori sono già collegati.' },
+              { text: '' },
+              { text: 'Il tuo fascicolo è in /archivio/sicurezza/soggetti-di-interesse/', cls: 'dim' },
+            ],
+            { cps: 60 },
+          );
+          await new Promise((r) => setTimeout(r, 1800));
+          return t.print('…e anche qualcun altro. Abbassa la voce.', { cls: 'warn', cps: 25 });
+        },
+      },
       reset: {
         usage: 'reset',
         help: 'cancella tutti i progressi',
@@ -618,7 +640,7 @@ export class Shell {
     const f = Number(raw.replace(',', '.'));
     if (!f) return t.echo('Uso: radio <frequenza in MHz>, es. radio 7,215', 'err');
     const fired = this.state.fired;
-    const station = this.session.manifest.radio.find((s) => Math.abs(s.f - f) < 0.0051 && (!s.v || fired.includes(s.v)));
+    const station = this.session.manifest.radio.find((s) => Math.abs(s.f - f) < 0.0051 && (!s.v || fired.includes(s.v)) && (!s.o || inTimeWindow(s.o)));
     await t.print(`Sintonia ${f.toFixed(3).replace('.', ',')} MHz ░▒░▒░▒░`, { cls: 'dim', cps: 60 });
     if (!station) return t.echo('…solo rumore.', 'dim');
     const p = await this.account.openLevel(station.b, station.l);

@@ -3,6 +3,7 @@ import type { RadioEntry } from '../../engine/types.ts';
 import type { AppDef } from '../desktop.ts';
 import { h } from '../dom.ts';
 import { ICONS } from '../icons.ts';
+import { inTimeWindow } from '../../engine/events.ts';
 
 const MIN = 2;
 const MAX = 30;
@@ -39,7 +40,7 @@ export const radioApp: AppDef = {
     let typing = 0;
     let noiseTimer = 0;
 
-    const onAir = () => session.manifest.radio.filter((s) => !s.v || session.state.fired.includes(s.v));
+    const onAir = () => session.manifest.radio.filter((s) => (!s.v || session.state.fired.includes(s.v)) && (!s.o || inTimeWindow(s.o)));
 
     function setFreq(f: number) {
       freq = Math.min(MAX, Math.max(MIN, Math.round(f * 1000) / 1000));

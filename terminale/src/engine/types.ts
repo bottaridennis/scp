@@ -135,6 +135,8 @@ export type RadioEntry = {
   l: number;
   /** Only on air after this event. */
   v?: string;
+  /** Only on air in this time window, "HH:MM-HH:MM" (local time). */
+  o?: string;
   b: Sealed<RadioPayload>;
 };
 

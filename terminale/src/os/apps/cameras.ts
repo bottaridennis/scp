@@ -100,6 +100,44 @@ function room(g: Ctx, kind: 'terminale' | 'stanza') {
   }
 }
 
+function studio(g: Ctx, onAir: boolean) {
+  g.fillStyle = '#2e2e2e';
+  g.fillRect(0, 0, W, H);
+  // acoustic panels
+  g.fillStyle = '#262626';
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) g.fillRect(20 + i * 48, 14 + j * 34, 40, 28);
+  // ON AIR sign
+  g.fillStyle = onAir ? '#b3261e' : '#3a1a1a';
+  g.fillRect(126, 84, 68, 16);
+  g.fillStyle = onAir ? '#ffd9d6' : '#5a3a3a';
+  g.font = 'bold 10px monospace';
+  g.textAlign = 'center';
+  g.fillText('ON AIR', 160, 96);
+  g.textAlign = 'left';
+  // desk and microphone arm
+  g.fillStyle = '#4d4d4d';
+  g.fillRect(60, 128, 200, 9);
+  g.fillRect(70, 137, 6, 40);
+  g.fillRect(244, 137, 6, 40);
+  g.strokeStyle = '#777';
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(230, 128);
+  g.lineTo(214, 106);
+  g.lineTo(186, 112);
+  g.stroke();
+  g.lineWidth = 1;
+  g.fillStyle = '#151515';
+  g.fillRect(176, 104, 12, 20);
+  // headphones left on the desk
+  g.strokeStyle = '#111';
+  g.lineWidth = 3;
+  g.beginPath();
+  g.arc(110, 126, 9, Math.PI, 0);
+  g.stroke();
+  g.lineWidth = 1;
+}
+
 function canteen(g: Ctx) {
   g.fillStyle = '#404040';
   g.fillRect(0, 0, W, H);
@@ -365,6 +403,9 @@ export const camerasApp: AppDef = {
         case 'muro':
           wall(g);
           break;
+        case 'studio':
+          studio(g, Math.floor(t) % 2 === 0);
+          break;
         default:
           g.fillStyle = '#333';
           g.fillRect(0, 0, W, H);
@@ -431,6 +472,16 @@ export const camerasApp: AppDef = {
             return;
           }
           figure(g, 160, 120, 70, 0.95);
+          vu(g, now);
+          break;
+        }
+        case 'studio': {
+          // the chair turns a little more every time you come back; sometimes someone is about to start
+          const turn = Math.min(1, mem.visits / 4 + t / 240);
+          g.fillStyle = '#1b1b1b';
+          g.fillRect(150, 136 - 30 * turn, 24, 30 * turn + 4);
+          g.fillRect(158, 140, 8, 30);
+          if (Math.random() < 0.003) seated(g, 162, 128);
           vu(g, now);
           break;
         }
@@ -506,5 +557,5 @@ function vu(g: Ctx, now: number) {
   g.font = '9px monospace';
   g.fillText('AUDIO: VOCE RILEVATA', 8, H - 12);
   const level = 20 + Math.abs(Math.sin(now / 90)) * 60;
-  g.fillRect(110, H - 18, level, 5);
+  g.fillRect(122, H - 18, level, 5);
 }

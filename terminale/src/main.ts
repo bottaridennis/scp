@@ -18,6 +18,7 @@ import { trashApp } from './os/apps/trash.ts';
 import { camerasApp } from './os/apps/cameras.ts';
 import { radioApp } from './os/apps/radio.ts';
 import { voicesApp } from './os/apps/voices.ts';
+import { browserApp, podcastApp } from './os/apps/web.ts';
 import { introApp, showIntro } from './os/apps/intro.ts';
 import { installEventPresenter } from './os/events.ts';
 
@@ -50,7 +51,7 @@ async function main() {
   if (archive) session.fs.mount(archive.mount, archive);
 
   const desktop = new Desktop(session, app);
-  for (const a of [explorerApp, mailApp, terminalApp, camerasApp, radioApp, voicesApp, settingsApp, trashApp, introApp, viewerApp, imageApp]) desktop.register(a);
+  for (const a of [explorerApp, mailApp, terminalApp, camerasApp, radioApp, voicesApp, podcastApp, browserApp, settingsApp, trashApp, introApp, viewerApp, imageApp]) desktop.register(a);
 
   installEventPresenter(session, desktop);
 

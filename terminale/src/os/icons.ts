@@ -22,6 +22,8 @@ export const ICONS = {
   power: svg('<path d="M5 3.5a5.5 5.5 0 106 0" fill="none" stroke="#7a1f1f" stroke-width="1.8"/><path d="M8 1v7" stroke="#7a1f1f" stroke-width="1.8"/>'),
   trash: svg('<path d="M3 4h10l-1 11H4z" fill="#d8dcdf" stroke="#444"/><rect x="2" y="2.5" width="12" height="1.8" fill="#9aa3a8" stroke="#444"/><path d="M6 6v7M8 6v7M10 6v7" stroke="#777"/>'),
   camera: svg('<rect x="1" y="5" width="10" height="6" fill="#4a4f55" stroke="#222"/><path d="M11 7l4-2v6l-4-2z" fill="#4a4f55" stroke="#222"/><circle cx="4" cy="8" r="1.2" fill="#d33"/>'),
+  podcast: svg('<path d="M3 9a5 5 0 0 1 10 0" fill="none" stroke="#2b2b2b" stroke-width="1.6"/><rect x="1.5" y="8.5" width="3" height="5" rx="1" fill="#3f7d5a" stroke="#1d3a2a"/><rect x="11.5" y="8.5" width="3" height="5" rx="1" fill="#3f7d5a" stroke="#1d3a2a"/>'),
+  browser: svg('<circle cx="8" cy="8" r="6.5" fill="#5b8fc7" stroke="#1f3a5c"/><path d="M1.5 8h13M8 1.5c-3 3.5-3 9.5 0 13M8 1.5c3 3.5 3 9.5 0 13" fill="none" stroke="#e8f0fa" stroke-width=".8"/>'),
   radio: svg('<rect x="1" y="5" width="14" height="9" fill="#6b5a43" stroke="#2b2318"/><circle cx="5" cy="9.5" r="2.6" fill="#2b2318"/><rect x="9" y="7" width="5" height="2" fill="#e8d9a8"/><rect x="9" y="10.5" width="5" height="1" fill="#2b2318"/><path d="M4 5L12 1" stroke="#222"/>'),
   voices: svg('<rect x="6" y="1" width="4" height="8" rx="2" fill="#5a6470" stroke="#222"/><path d="M3.5 7a4.5 4.5 0 009 0M8 11.5V15M5 15h6" fill="none" stroke="#222" stroke-width="1.2"/>'),
   order: svg('<path d="M3 1h10v14H3z" fill="#f4f1e6" stroke="#555"/><rect x="5" y="3" width="6" height="2" fill="#7a1f1f"/><path d="M5 7h6M5 9h6M5 11h4" stroke="#888"/>'),

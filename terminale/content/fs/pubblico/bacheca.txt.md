@@ -22,3 +22,8 @@ FESTA! Lunedì 2 marzo ore 18:00, sala riunioni: compleanno della
   Non cantate «tanti auguri» in Ala Est.
 
 AVVISO: chi ha preso le cuffie del laboratorio acustico le riporti.
+
+BIBLIOTECA DELLA SALETTA: chi ha preso in prestito «Racconti Horror» è
+  pregato di restituirlo. È il terzo che sparisce. E chi lo legge ad alta
+  voce di notte in Ala Est la smetta: qualcuno da dietro la parete
+  ripete le frasi.

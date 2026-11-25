@@ -434,8 +434,10 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     const level = asLevel(front.livello, where);
     const v = str(front.dopo_evento);
     if (v) eventRefs.push({ where, id: v });
+    const o = str(front.ora);
+    if (o && !/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(o)) throw new ContentError(`${where}: ora deve essere HH:MM-HH:MM`);
     const testo = await segmented(body, level, where);
-    radio.push({ f, l: level, ...(v ? { v } : {}), ...(await sealLevel({ nome: String(front.nome ?? 'Trasmissione'), testo }, level, where, body)) });
+    radio.push({ f, l: level, ...(v ? { v } : {}), ...(o ? { o } : {}), ...(await sealLevel({ nome: String(front.nome ?? 'Trasmissione'), testo }, level, where, body)) });
   }
 
   const voci: VoiceEntry[] = [];
