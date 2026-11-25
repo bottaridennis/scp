@@ -36,6 +36,12 @@ ricaricare la pagina.
 Un utente con `"nascosto": true` in `gioco.json` non compare nell'elenco finché non vi si
 accede una volta, da «Altro utente…» (nome e password) o con `login` nel terminale.
 
+**Salto nel tempo.** Il comando `salto 2026` (o Impostazioni → Aspetto del sistema)
+passa al tema «Moderno»: angoli arrotondati, superfici traslucide, barra delle
+applicazioni centrata e menu Start a griglia. Cambia solo l'aspetto: app, finestre e
+storia restano le stesse. `salto 1999` torna al tema classico. La scelta vale per tutti
+i profili ed è salvata nel browser (stili in `src/os/modern.css`).
+
 Ogni profilo ha il suo desktop: finestre aperte, posizione e dimensioni, sfondo e
 documenti recenti sono salvati nel browser per utente (`fondos:<gioco>:<utente>`).
 
@@ -49,7 +55,7 @@ documenti recenti sono salvati nel browser per utente (`fondos:<gioco>:<utente>`
 | **Telecamere** | Videosorveglianza del sito disegnata in tempo reale, con comportamenti inquietanti (`content/telecamere/`). |
 | **Radio** | Ricevitore a onde corte: si sintonizzano le frequenze di `content/radio/`. |
 | **Fonoteca** | Catalogo delle voci usate da Eco, sbloccate leggendo i documenti (`content/fonoteca/`). |
-| **Impostazioni** | Sfondo, fosforo del terminale, suoni, cancellazione dei progressi, crediti. |
+| **Impostazioni** | Aspetto del sistema (Classico 1999 / Moderno 2026), sfondo, fosforo del terminale, suoni, cancellazione dei progressi, crediti. |
 | **Cestino** | Scorciatoia per `/.cestino`, dove finiscono i documenti cancellati. |
 | **Ordine di incarico** | Il briefing iniziale (menu Start). |
 | **Linea interna 4** | Si apre da sola quando l'intruso scrive. |
@@ -63,7 +69,8 @@ la finestra.
 Comandi: `help`, `incarico`, `login`, `logout`, `whoami`, `ls [-a]`, `cd`, `pwd`, `cat`,
 `stat`, `open`, `search`, `decrypt`, `ripara <file> <parità>`, `unisci <frammenti…>`,
 `mail`, `rispondi <mail> [opzione]`, `rete`, `connetti <nodo>`, `radio [MHz]`, `voci`,
-`telecamere`, `clear`, `audio on|off`, `tema verde|ambra`, `crediti`, `reset`, `exit`. I nomi con spazi vanno tra virgolette (`cd "Serie I"`) oppure con
+`telecamere`, `clear`, `audio on|off`, `tema verde|ambra`, `salto [2026|1999]`, `crediti`,
+`reset`, `exit`. I nomi con spazi vanno tra virgolette (`cd "Serie I"`) oppure con
 `\ `; il Tab li completa da solo.
 
 Gli **eventi** della storia funzionano su tutto il desktop:

@@ -1,5 +1,6 @@
 import './style.css';
 import './os/os.css';
+import './os/modern.css';
 import { Game } from './engine/game.ts';
 import { Session } from './engine/session.ts';
 import { Store } from './engine/state.ts';
@@ -43,6 +44,7 @@ async function main() {
   document.title = manifest.meta.titolo;
   const store = new Store(manifest.id);
   document.documentElement.dataset.phosphor = store.state.settings.theme;
+  document.documentElement.dataset.os = store.state.settings.os ?? 'classico';
   const session = new Session(manifest, store);
   const archive = manifest.meta.archivio ? new ScpFS(manifest.meta.archivio) : null;
   if (archive) session.fs.mount(archive.mount, archive);

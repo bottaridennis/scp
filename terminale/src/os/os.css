@@ -604,3 +604,4 @@ button { font: inherit; color: inherit; }
   .cam-item { flex-shrink: 0; }
   .intro-win { height: 100%; }
 }
+.menu-pinned-title { display: none; }

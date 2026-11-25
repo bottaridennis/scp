@@ -284,8 +284,8 @@ export class Desktop {
   private openMenu() {
     const acc = this.account;
     const k = acc.keyring;
-    const item = (svg: string, label: string, action: () => void) =>
-      h('button', { type: 'button', role: 'menuitem', class: 'menu-item', onclick: () => { this.closeMenu(); action(); } }, icon(svg), h('span', {}, label));
+    const item = (svg: string, label: string, action: () => void, kind = '') =>
+      h('button', { type: 'button', role: 'menuitem', class: `menu-item ${kind}`, title: label, onclick: () => { this.closeMenu(); action(); } }, icon(svg), h('span', {}, label));
     this.menu.replaceChildren(
       h(
         'div',
@@ -301,16 +301,17 @@ export class Desktop {
           icon(acc.user === GUEST ? ICONS.guest : ICONS.user, 'ico ico-lg'),
           h('div', {}, h('strong', {}, k?.nome ?? 'Ospite'), h('small', {}, `${acc.user} · Livello ${acc.level} — ${acc.levelLabel(acc.level)}`)),
         ),
-        ...this.appsWith((a) => Boolean(a.menu)).map((a) => item(a.icon, a.name, () => void this.open(a.id))),
+        h('div', { class: 'menu-sep menu-pinned-title' }, 'Applicazioni'),
+        ...this.appsWith((a) => Boolean(a.menu)).map((a) => item(a.icon, a.name, () => void this.open(a.id), 'is-app')),
         ...(this.profile?.recent.length
           ? [
               h('div', { class: 'menu-sep' }, 'Documenti recenti'),
-              ...this.profile.recent.slice(0, 5).map((r) => item(ICONS.doc, r.title, () => this.openPath(r.path))),
+              ...this.profile.recent.slice(0, 5).map((r) => item(ICONS.doc, r.title, () => this.openPath(r.path), 'is-recent')),
             ]
           : []),
         h('div', { class: 'menu-sep' }),
-        item(ICONS.swap, 'Cambia utente…', () => this.onSwitchUser()),
-        item(ICONS.power, 'Riavvia', () => location.reload()),
+        item(ICONS.swap, 'Cambia utente…', () => this.onSwitchUser(), 'is-power'),
+        item(ICONS.power, 'Riavvia', () => location.reload(), 'is-power'),
       ),
     );
     this.menu.hidden = false;

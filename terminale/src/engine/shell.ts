@@ -6,7 +6,7 @@
 import type { Game } from './game.ts';
 import { GUEST } from './game.ts';
 import type { Session } from './session.ts';
-import type { Theme } from './state.ts';
+import type { OsTheme, Theme } from './state.ts';
 import type { Line, Terminal } from './terminal.ts';
 import { basename, normalizePath, type ReadResult, type VNode } from './vfs.ts';
 
@@ -34,7 +34,7 @@ export type ShellHost = {
 const ORDER = [
   'help', 'incarico', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'stat', 'open', 'search', 'decrypt',
   'ripara', 'unisci', 'mail', 'rispondi', 'rete', 'connetti', 'radio', 'voci', 'telecamere',
-  'clear', 'audio', 'tema', 'crediti', 'reset', 'exit',
+  'clear', 'audio', 'tema', 'salto', 'crediti', 'reset', 'exit',
 ];
 
 export class Shell {
@@ -300,6 +300,24 @@ export class Shell {
           const theme: Theme = v?.toLowerCase() === 'ambra' ? 'ambra' : v?.toLowerCase() === 'verde' ? 'verde' : cur === 'verde' ? 'ambra' : 'verde';
           setTheme(this.session, theme);
           return t.echo(`Fosforo ${theme}.`, 'dim');
+        },
+      },
+      salto: {
+        usage: 'salto [2026|1999]',
+        help: 'salto nel tempo: cambia l’aspetto del sistema',
+        complete: ['2026', '1999'],
+        run: async ([v]) => {
+          const current = this.state.settings.os;
+          const target: OsTheme = v === '1999' ? 'classico' : v === '2026' ? 'moderno' : current === 'moderno' ? 'classico' : 'moderno';
+          if (target === current) return t.echo(`Il sistema è già nel ${target === 'moderno' ? '2026' : '1999'}.`, 'dim');
+          await t.print(
+            target === 'moderno'
+              ? 'Salto temporale: 1999 → 2026\nDownload degli aggiornamenti di FONDAZIONE OS ▒▒▒▒▒▒▒▒▒▒ 100%\nInstallazione in corso… non spegnere il terminale.'
+              : 'Salto temporale: 2026 → 1999\nRipristino della configurazione originale ▒▒▒▒▒▒▒▒▒▒ 100%',
+            { cls: 'dim', cps: 90 },
+          );
+          setOsTheme(this.session, target);
+          return t.echo(target === 'moderno' ? 'Benvenuto nel 2026. (Per tornare indietro: salto 1999)' : 'Bentornato nel 1999. (Per tornare avanti: salto 2026)', 'ok');
         },
       },
       crediti: {
@@ -845,6 +863,21 @@ export function setTheme(session: Session, theme: Theme) {
   } catch {
     /* ignore */
   }
+  session.notify();
+}
+
+/** Switches the look of the desktop; only the theme changes. */
+export function setOsTheme(session: Session, os: OsTheme) {
+  document.documentElement.classList.add('os-switching');
+  document.documentElement.dataset.os = os;
+  session.state.settings.os = os;
+  session.store.save();
+  try {
+    localStorage.setItem('terminale:os', os);
+  } catch {
+    /* ignore */
+  }
+  setTimeout(() => document.documentElement.classList.remove('os-switching'), 900);
   session.notify();
 }
 
