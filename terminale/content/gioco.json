@@ -1,0 +1,78 @@
+{
+  "id": "sito47-eco",
+  "titolo": "SITO-47 · Terminale T-03",
+  "host": "t03",
+  "segreto": "cambia-questo-segreto-prima-del-deploy-7f3a91c2e4",
+  "iterazioni": 150000,
+  "livelli": {
+    "0": "Ospite",
+    "1": "Personale tecnico",
+    "2": "Ricerca",
+    "3": "Direzione di ricerca",
+    "4": "Direzione del sito",
+    "5": "Consiglio O5"
+  },
+  "utenti": [
+    {
+      "nome": "g.rinaldi",
+      "nome_completo": "Giulia Rinaldi",
+      "ruolo": "Tecnica delle comunicazioni, centralino",
+      "livello": 1,
+      "password": "rinaldi214"
+    },
+    {
+      "nome": "m.ferri",
+      "nome_completo": "Dr. Marco Ferri",
+      "ruolo": "Ricercatore, acustica anomala",
+      "livello": 2,
+      "password": "fondoscala"
+    },
+    {
+      "nome": "a.costa",
+      "nome_completo": "Dr.ssa Anna Costa",
+      "ruolo": "Responsabile di ricerca, Ala Est",
+      "livello": 3,
+      "password": "saraceno1987"
+    }
+  ],
+  "logo": [
+    " ███████  ██████ ██████",
+    " ██      ██      ██   ██",
+    " ███████ ██      ██████",
+    "      ██ ██      ██",
+    " ███████  ██████ ██",
+    "",
+    " FONDAZIONE SCP · SITO-47",
+    " SECURE · CONTAIN · PROTECT",
+    ""
+  ],
+  "boot": [
+    "BIOS T-03 rev. 4.11 ........... memoria 640K",
+    "[OK] Rete interna Sito-47",
+    "[OK] Archivio documentale montato in sola lettura",
+    "~",
+    "[ERRORE] Collegamento con la rete centrale della Fondazione assente.",
+    "[ATTENZIONE] Isolamento di rete attivo dal 03/03/2026 04:52 (Protocollo CENERE).",
+    "[ATTENZIONE] Ultimo accesso registrato: a.costa — 03/03/2026 06:41.",
+    "~",
+    "[AVVISO] Questo terminale è proprietà della Fondazione SCP. Ogni accesso è registrato.",
+    "[AVVISO] L'uso non autorizzato comporta l'applicazione dei protocolli di sicurezza.",
+    "~",
+    "Sessione ospite avviata su T-03. Inizia leggendo LEGGIMI.txt (cat LEGGIMI.txt)."
+  ],
+  "crediti": [
+    "CREDITI E LICENZE",
+    "",
+    "Questo gioco è ambientato nell'universo della Fondazione SCP, nato sul SCP Wiki",
+    "(https://scp-wiki.wikidot.com), i cui contenuti sono distribuiti con licenza",
+    "Creative Commons BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/deed.it).",
+    "",
+    "Il Sito-47, la sua anomalia, i personaggi e tutti i testi sono originali;",
+    "in quanto opera derivata dall'universo SCP, i testi del gioco sono distribuiti",
+    "anch'essi con licenza CC BY-SA 3.0. Il concetto della Fondazione SCP, il motto",
+    "«Secure. Contain. Protect.» e le classi degli oggetti appartengono ai rispettivi",
+    "autori del SCP Wiki. Questo gioco non è affiliato al SCP Wiki.",
+    "",
+    "Font VT323 di Peter Hull (SIL Open Font License 1.1)."
+  ]
+}

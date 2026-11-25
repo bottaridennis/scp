@@ -25,12 +25,23 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            terminale/package-lock.json
       - name: Install dependencies
         run: npm ci || npm install
       - name: Build
         run: npm run build
+      - name: Build terminal game
+        working-directory: terminale
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/terminale/
+        run: |
+          npm ci
+          npm run build
+          cp -r dist ../dist/terminale
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
