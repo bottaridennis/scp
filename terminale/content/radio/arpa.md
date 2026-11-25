@@ -3,6 +3,7 @@ frequenza: 11.47
 livello: 3
 nome: Segnale non identificato
 dopo_evento: finale-sigillo
+audio: radio-arpa.mp3
 ---
 settantotto per cento.
 settantotto per cento.

@@ -5,6 +5,7 @@ tipo: intruso
 da: a.costa
 dopo_login: a.costa
 ritardo: 15
+audio: intruso-costa.mp3
 ---
 finalmente qualcuno al mio livello.
 ho lasciato acceso T-03 per te. ci sono ancora persone vive nei

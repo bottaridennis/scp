@@ -3,6 +3,7 @@
  * levels, `decrypt` keys and renders censored documents.
  */
 import {
+  decryptBytes,
   decryptText,
   deriveKey,
   exportRawKey,
@@ -11,7 +12,7 @@ import {
   open,
   saltFor,
 } from './crypto-core.ts';
-import type { DocBody, DocMeta, EventEntry, EventPayload, FileEntry, Keyring, MailEntry, Manifest, Sealed } from './types.ts';
+import type { AudioRef, DocBody, DocMeta, EventEntry, EventPayload, FileEntry, Keyring, MailEntry, Manifest, Sealed } from './types.ts';
 import type { Store } from './state.ts';
 
 export const GUEST = 'ospite';
@@ -254,6 +255,21 @@ export class Game {
   }
 
   /** Opens a value sealed with a single level key (radio, voices, cameras). */
+  /** Decrypts an encrypted recording into a playable object URL, or null without clearance. */
+  async openAudio(ref: AudioRef): Promise<string | null> {
+    if (this.level < ref.l) return null;
+    const key = this.levelKeys.get(ref.l);
+    if (!key) return null;
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}data/audio/${ref.f}`);
+      if (!res.ok) return null;
+      const plain = await decryptBytes(key, new Uint8Array(await res.arrayBuffer()));
+      return URL.createObjectURL(new Blob([plain], { type: 'audio/mpeg' }));
+    } catch {
+      return null;
+    }
+  }
+
   async openLevel<T>(sealed: Sealed<T>, level: number): Promise<T | null> {
     try {
       const res = await open<T>(sealed, () => (this.level >= level ? (this.levelKeys.get(level) ?? null) : null));

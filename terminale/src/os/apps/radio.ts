@@ -37,6 +37,11 @@ export const radioApp: AppDef = {
     );
 
     let station: RadioEntry | null = null;
+    let playing: HTMLAudioElement | null = null;
+    const stopAudio = () => {
+      if (playing) session.sound.stopVoice();
+      playing = null;
+    };
     let typing = 0;
     let noiseTimer = 0;
 
@@ -62,6 +67,7 @@ export const radioApp: AppDef = {
     async function play() {
       const my = ++typing;
       clearInterval(noiseTimer);
+      stopAudio();
       out.replaceChildren();
       if (!station) {
         noiseTimer = window.setInterval(() => {
@@ -80,6 +86,29 @@ export const radioApp: AppDef = {
       const body = h('div', { class: 'crt-line' });
       out.append(head, body);
       session.sound.alert('sistema');
+      if (station.a || station.ax) {
+        const current = station;
+        const listen = h('button', { type: 'button', class: 'btn radio-listen' }, '▶ Ascolta la trasmissione');
+        const idle = () => {
+          playing = null;
+          listen.textContent = '▶ Ascolta la trasmissione';
+        };
+        const start = async (force: boolean) => {
+          const audio = await session.playRecording(current, force);
+          if (my !== typing || !audio) return;
+          playing = audio;
+          listen.textContent = '■ Ferma';
+          audio.addEventListener('ended', idle);
+        };
+        listen.addEventListener('click', () => {
+          if (playing) {
+            stopAudio();
+            idle();
+          } else void start(true);
+        });
+        out.prepend(listen);
+        void start(false);
+      }
       for (let i = 0; i <= text.length; i += 2) {
         if (my !== typing) return;
         body.textContent = text.slice(0, i);
@@ -95,6 +124,7 @@ export const radioApp: AppDef = {
     win.onClose = () => {
       typing++;
       clearInterval(noiseTimer);
+      stopAudio();
     };
     setFreq(freq);
   },

@@ -646,6 +646,7 @@ export class Shell {
     const p = await this.account.openLevel(station.b, station.l);
     if (!p) return t.echo('Segnale presente ma incomprensibile (cifratura di livello superiore).', 'warn');
     const text = await this.account.renderBody(p.testo);
+    void this.session.playRecording(station);
     return t.print([{ text: `◉ ${p.nome}`, cls: 'hl' }, ...formatDoc(text)], { cps: 120 });
   }
 

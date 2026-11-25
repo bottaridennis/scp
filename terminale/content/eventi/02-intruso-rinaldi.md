@@ -5,6 +5,7 @@ tipo: intruso
 da: "???"
 dopo_login: g.rinaldi
 ritardo: 25
+audio: intruso-rinaldi.mp3
 ---
 giulia?
 sei tornata. il turno di notte è finito da tanto.

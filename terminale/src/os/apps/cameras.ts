@@ -347,6 +347,7 @@ export const camerasApp: AppDef = {
       if (current?.cam.comportamento === 'seduto' && ghostUntil > performance.now()) {
         ghostUntil = 0;
         session.sound.alert('intruso');
+        session.sound.voice('non-girarti.mp3');
         desktop.toast('linea interna 4', 'non girarti.', 'alert');
       }
     });
