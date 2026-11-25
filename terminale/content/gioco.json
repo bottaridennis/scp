@@ -12,6 +12,24 @@
     "4": "Direzione del sito",
     "5": "Consiglio O5"
   },
+  "archivio": {
+    "cartella": "/archivio-scp",
+    "livelli": {
+      "safe": 1,
+      "neutralized": 1,
+      "explained": 1,
+      "decommissioned": 1,
+      "euclid": 2,
+      "keter": 3,
+      "thaumiel": 4,
+      "apollyon": 4,
+      "archon": 4,
+      "esoteric-class": 5,
+      "*": 5
+    },
+    "livello_sezioni": 1,
+    "sopra_livello": "bloccati"
+  },
   "utenti": [
     {
       "nome": "g.rinaldi",

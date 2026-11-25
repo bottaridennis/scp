@@ -11,6 +11,7 @@ import { runBoot } from './os/boot.ts';
 import { Desktop } from './os/desktop.ts';
 import { h } from './os/dom.ts';
 import { LoginScreen } from './os/login.ts';
+import { ScpFS } from './archivio/scp-fs.ts';
 
 const DATA_URL = `${import.meta.env.BASE_URL}data/archivio.json`;
 
@@ -36,6 +37,8 @@ async function main() {
   const store = new Store(manifest.id);
   document.documentElement.dataset.phosphor = store.state.settings.theme;
   const session = new Session(manifest, store);
+  const archive = manifest.meta.archivio ? new ScpFS(manifest.meta.archivio) : null;
+  if (archive) session.fs.mount(archive.mount, archive);
 
   const desktop = new Desktop(session, app);
   for (const a of [explorerApp, terminalApp, settingsApp, viewerApp, imageApp]) desktop.register(a);
@@ -50,6 +53,8 @@ async function main() {
     login.show(async (user) => {
       await desktop.start(user);
       session.events.check();
+      // Load the archive index in the background (only the index: contents load on demand).
+      archive?.load().catch(() => {});
     });
   desktop.onSwitchUser = () => {
     desktop.stop();

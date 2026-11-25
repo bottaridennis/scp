@@ -32,5 +32,17 @@ function contentWatcher(): Plugin {
 export default defineConfig(({ command, isPreview }) => ({
   base: command === 'serve' && !isPreview ? '/' : (process.env.BASE_PATH ?? '/scp/terminale/'),
   plugins: [contentWatcher()],
+  // The SCP archive reuses the main site's API module (../src/services/scpApi.ts).
+  resolve: { dedupe: ['dompurify'] },
+  server: {
+    fs: { allow: ['..'] },
+    proxy: {
+      '/scp-api': {
+        target: 'https://scp-data.tedivm.com',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/scp-api/, ''),
+      },
+    },
+  },
   build: { target: 'es2022' },
 }));
