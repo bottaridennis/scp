@@ -24,6 +24,8 @@ export type AppDef = {
   menu?: boolean;
   /** Fills win.body. May set win.onClose, win.args, win.title. */
   launch: (ctx: AppContext, args?: unknown) => void | Promise<void>;
+  /** Shortcut apps run an action instead of opening their own window. */
+  action?: (desktop: Desktop) => void;
   /** For single-instance apps: reuse the open window with new arguments. */
   reuse?: (ctx: AppContext, args?: unknown) => void;
   /** Badge next to the desktop icon (e.g. unread mail). */
@@ -183,6 +185,10 @@ export class Desktop {
     const app = this.apps.get(appId);
     if (!app) return null;
     this.closeMenu();
+    if (app.action) {
+      app.action(this);
+      return null;
+    }
     if (!app.multi) {
       const existing = this.wm.list().find((w) => w.app === appId);
       if (existing) {

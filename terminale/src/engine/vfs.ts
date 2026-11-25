@@ -45,8 +45,11 @@ export type DocMeta = {
   related?: { name: string; path: string; kind: NodeKind; locked: boolean }[];
 };
 
+/** Properties of a file ("Proprietà", `stat`). */
+export type FileProps = { autore?: string; modificato?: string };
+
 export type ReadResult =
-  | { ok: true; kind: 'text'; text: string }
+  | { ok: true; kind: 'text'; text: string; props?: FileProps }
   | { ok: true; kind: 'html'; html: string; text: string; meta: DocMeta }
   | { ok: true; kind: 'image'; src: string; caption: string; meta?: DocMeta }
   | { ok: false; reason: 'denied'; message: string }
@@ -61,6 +64,8 @@ export interface FileSystem {
   read(path: string, acc: Account): Promise<ReadResult>;
   /** Synchronous child names of a directory ("name/" for folders), for Tab completion. */
   names(dir: string, acc: Account): string[];
+  /** Author/date properties, if the account may read the file (does not count as reading it). */
+  props?(path: string, acc: Account): Promise<FileProps | null>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -138,6 +143,11 @@ export class MountFS implements FileSystem {
 
   names(dir: string, acc: Account) {
     return this.route(dir).names(dir, acc);
+  }
+
+  async props(path: string, acc: Account) {
+    const fs = this.route(path);
+    return fs.props ? fs.props(path, acc) : null;
   }
 }
 

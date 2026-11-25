@@ -7,6 +7,8 @@ import type { Session } from '../engine/session.ts';
 import { h, icon } from './dom.ts';
 import { ICONS } from './icons.ts';
 
+const OTHER = '\u0000altro';
+
 export class LoginScreen {
   private readonly session: Session;
   private readonly el: HTMLElement;
@@ -14,6 +16,8 @@ export class LoginScreen {
   private readonly form: HTMLFormElement;
   private readonly formLabel: HTMLElement;
   private readonly password: HTMLInputElement;
+  private readonly username: HTMLInputElement;
+  private readonly userRow: HTMLElement;
   private readonly error: HTMLElement;
   private selected: string | null = null;
   private onLogin: (user: string) => void = () => {};
@@ -23,10 +27,12 @@ export class LoginScreen {
     this.list = h('div', { class: 'login-profiles', role: 'list' });
     this.formLabel = h('label', { for: 'login-password' });
     this.password = h('input', { id: 'login-password', type: 'password', autocomplete: 'off', class: 'field', spellcheck: 'false' });
+    this.username = h('input', { id: 'login-user', type: 'text', autocomplete: 'off', autocapitalize: 'off', class: 'field', spellcheck: 'false' });
+    this.userRow = h('div', { class: 'login-user-row', hidden: true }, h('label', { for: 'login-user' }, 'Nome utente:'), this.username);
     this.error = h('p', { class: 'login-error', role: 'alert' });
     const submit = h('button', { type: 'submit', class: 'btn btn-default' }, 'Accedi');
     const cancel = h('button', { type: 'button', class: 'btn', onclick: () => this.select(null) }, 'Annulla');
-    this.form = h('form', { class: 'login-form', hidden: true }, this.formLabel, this.password, this.error, h('div', { class: 'btn-row' }, submit, cancel));
+    this.form = h('form', { class: 'login-form', hidden: true }, this.userRow, this.formLabel, this.password, this.error, h('div', { class: 'btn-row' }, submit, cancel));
     this.form.addEventListener('submit', (e) => {
       e.preventDefault();
       void this.submit();
@@ -59,6 +65,12 @@ export class LoginScreen {
   }
 
   private render() {
+    const other = h(
+      'button',
+      { type: 'button', role: 'listitem', class: `profile${this.selected === OTHER ? ' is-selected' : ''}`, onclick: () => this.select(OTHER) },
+      icon(ICONS.user, 'ico ico-lg'),
+      h('span', { class: 'profile-text' }, h('strong', {}, 'Altro utente…'), h('small', {}, 'Accesso con nome utente e password')),
+    );
     this.list.replaceChildren(
       ...this.session.profiles().map((p) =>
         h(
@@ -78,6 +90,7 @@ export class LoginScreen {
           ),
         ),
       ),
+      other,
     );
   }
 
@@ -86,7 +99,12 @@ export class LoginScreen {
     this.error.textContent = '';
     this.password.value = '';
     this.form.hidden = !name;
-    if (name) {
+    this.userRow.hidden = name !== OTHER;
+    this.username.value = '';
+    if (name === OTHER) {
+      this.formLabel.textContent = 'Password:';
+      setTimeout(() => this.username.focus(), 0);
+    } else if (name) {
       this.formLabel.textContent = `Password per ${name}:`;
       setTimeout(() => this.password.focus(), 0);
     }
@@ -105,21 +123,38 @@ export class LoginScreen {
 
   private async submit() {
     if (!this.selected) return;
+    const name = this.selected === OTHER ? this.username.value.trim().toLowerCase() : this.selected;
+    if (!name) {
+      this.error.textContent = 'Inserisci il nome utente.';
+      return;
+    }
+    if (name === GUEST) {
+      await this.session.loginDesktop(GUEST);
+      return this.done(GUEST);
+    }
+    if (!this.session.desktop.hasUser(name)) {
+      this.session.sound.alert('sistema');
+      this.error.textContent = 'Utente o password errati. Accesso negato.';
+      return;
+    }
+    if (!this.password.value && this.session.desktop.hasStoredKey(name) && (await this.session.loginDesktop(name))) {
+      return this.done(name);
+    }
     if (!this.password.value) {
       this.error.textContent = 'Inserisci la password.';
       return;
     }
     this.busy(true);
     this.error.textContent = 'Verifica delle credenziali…';
-    const ok = await this.session.loginDesktop(this.selected, this.password.value);
+    const ok = await this.session.loginDesktop(name, this.password.value);
     this.busy(false);
     if (!ok) {
       this.session.sound.alert('sistema');
-      this.error.textContent = 'Password errata. Accesso negato.';
+      this.error.textContent = this.selected === OTHER ? 'Utente o password errati. Accesso negato.' : 'Password errata. Accesso negato.';
       this.password.select();
       return;
     }
-    this.done(this.selected);
+    this.done(name);
   }
 
   private busy(on: boolean) {

@@ -1,7 +1,7 @@
 /** The encrypted story filesystem exposed through the common FileSystem interface. */
 import { GUEST } from './game.ts';
 import type { FileEntry } from './types.ts';
-import { basename, kindOf, Tree, type Account, type FileSystem, type Page, type ReadResult, type VNode } from './vfs.ts';
+import { basename, kindOf, Tree, type Account, type FileProps, type FileSystem, type Page, type ReadResult, type VNode } from './vfs.ts';
 
 export class GameFS implements FileSystem {
   /** Folders mounted by other filesystems, listed in their parent. */
@@ -86,7 +86,15 @@ export class GameFS implements FileSystem {
     if (res.status === 'denied') return { ok: false, reason: 'denied', message: `ACCESSO NEGATO — Livello ${res.level} richiesto` };
     if (res.status === 'encrypted') return { ok: false, reason: 'encrypted', message: `${basename(path)}: file cifrato. Usa: decrypt ${basename(path)} <chiave>` };
     this.onRead(path);
-    return { ok: true, kind: 'text', text: res.text };
+    if (kindOf(path) === 'image') return { ok: true, kind: 'image', src: res.text, caption: res.meta?.didascalia ?? basename(path) };
+    return { ok: true, kind: 'text', text: res.text, props: res.meta };
+  }
+
+  async props(path: string, acc: Account): Promise<FileProps | null> {
+    const f = this.entry(path, acc);
+    if (!f) return null;
+    const res = await acc.read(f);
+    return res.status === 'ok' ? { autore: res.meta?.autore, modificato: res.meta?.modificato } : null;
   }
 
   /** The FileEntry behind a path, for `decrypt`. */

@@ -26,4 +26,7 @@ Un ultimo messaggio, programmato il 03/03/2026 alle 06:40:
   tranne chi verrà dopo di te. Spegni T-03 uscendo.
   Nessuno ascolta più.  — A.
 
+Disco locale di T-03: integro (non collegato alla rete interna).
+Nuovo file in /home/a.costa: per-chi-resta.txt
+
 T-03: arresto del sistema.

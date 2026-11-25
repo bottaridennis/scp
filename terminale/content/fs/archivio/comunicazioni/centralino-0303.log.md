@@ -9,7 +9,8 @@ livello: 1
 01:28  verifica operatore turno notte: parola d'ordine VEGLIA — accettata
 01:28  richiedente: [[L2: m.ferri, da interno 231]]
 01:29  linea 4 instradata su rete dati. Durata prevista: 60 min
-02:14  interno 4 -> interno 231   durata 00:38:12
+02:14  interno 4 -> interno 231   durata 00:38:12   (analisi spettrale: /archivio/ricerca/analisi)
+02:40  interno 110 -> interno 4   durata 00:14:22   [[L2: chiamata IN USCITA: l'interno 110 ha composto il 4]]
 02:51  interno 4 -> interno 302   durata 00:00:04   (nessuna risposta)
 03:05  interno 4 -> TUTTI GLI INTERNI   durata 00:21:40
 03:05  ATTENZIONE: chiamata di gruppo non autorizzata

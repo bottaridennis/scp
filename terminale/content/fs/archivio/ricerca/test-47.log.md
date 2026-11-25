@@ -1,5 +1,7 @@
 ---
 livello: 2
+autore: a.costa
+modificato: 24/01/2026 23:52
 ---
 # Registro dei test — PROV-47
 Responsabile: Dr. M. Ferri · Supervisione: Dr.ssa A. Costa
@@ -10,6 +12,7 @@ T-01  10/01/2026  Lettura di una lista di 20 parole in Camera 4.
 T-02  17/01/2026  Stessa lista, ricercatore diverso.
       Riprodotta con la voce del PRIMO ricercatore.
 T-03  24/01/2026  Test con parola singola. ESITO GRAVE.
+      Operatore: D-4719 (Classe D).
       Vedi Protocollo SILENZIO, punto 6.
 T-04  02/02/2026  Comunicazione solo scritta. Nessuna attività.
 T-05  09/02/2026  Ricercatore in ascolto in cuffia, senza parlare.

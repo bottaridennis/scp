@@ -51,6 +51,36 @@
       "ruolo": "Responsabile di ricerca, Ala Est",
       "livello": 3,
       "password": "saraceno1987"
+    },
+    {
+      "nome": "d.marino",
+      "nome_completo": "Dario Marino",
+      "ruolo": "Logistica e magazzino",
+      "livello": 1,
+      "password": "libeccio"
+    },
+    {
+      "nome": "b.leone",
+      "nome_completo": "Agente Bruno Leone",
+      "ruolo": "Responsabile della sicurezza",
+      "livello": 2,
+      "password": "davide2019"
+    },
+    {
+      "nome": "d-4719",
+      "nome_completo": "D-4719",
+      "ruolo": "Personale di Classe D (nessun fascicolo)",
+      "livello": 1,
+      "password": "ascoltami",
+      "nascosto": true
+    },
+    {
+      "nome": "p.vasari",
+      "nome_completo": "Dir. Paolo Vasari",
+      "ruolo": "Direttore del Sito-47",
+      "livello": 4,
+      "password": "cenere47",
+      "nascosto": true
     }
   ],
   "logo": [

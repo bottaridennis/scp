@@ -51,7 +51,7 @@ type GameConfig = {
   segreto: string;
   iterazioni: number;
   livelli: Record<string, string>;
-  utenti: { nome: string; nome_completo: string; ruolo: string; livello: number; password: string }[];
+  utenti: { nome: string; nome_completo: string; ruolo: string; livello: number; password: string; nascosto?: boolean }[];
   logo: string[];
   boot: string[];
   crediti: string[];
@@ -122,7 +122,10 @@ function warn(msg: string) {
   warnings.push(msg);
 }
 
-async function walk(dir: string): Promise<string[]> {
+const IMAGE_RE = /\.(png|jpe?g|gif|webp)$/i;
+const MIME: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' };
+
+async function walk(dir: string, images = false): Promise<string[]> {
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -132,8 +135,8 @@ async function walk(dir: string): Promise<string[]> {
   const out: string[] = [];
   for (const e of entries) {
     const full = path.join(dir, e.name);
-    if (e.isDirectory()) out.push(...(await walk(full)));
-    else if (e.name.endsWith('.md')) out.push(full);
+    if (e.isDirectory()) out.push(...(await walk(full, images)));
+    else if (e.name.endsWith('.md') || (images && IMAGE_RE.test(e.name))) out.push(full);
   }
   return out.sort();
 }
@@ -210,7 +213,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     secrets.push({ value: normalizeSecret(u.password), what: `password di ${name}` });
   }
 
-  async function sealDoc(plain: PlainDoc, level: number, chiave: string | undefined, scope: string, where: string): Promise<FileEntry['b']> {
+  async function sealDoc(plain: PlainDoc, level: number, chiave: string | undefined, scope: string, where: string, meta?: DocBody['m']): Promise<FileEntry['b']> {
     const g: Segment[] = [];
     for (const seg of plain.segments) {
       g.push({
@@ -221,7 +224,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
       });
       lockedTexts.push({ text: seg.text, where: `${where} [[L${seg.level}]]` });
     }
-    const body: DocBody = { t: plain.text, g };
+    const body: DocBody = { t: plain.text, g, ...(meta && Object.keys(meta).length ? { m: meta } : {}) };
     const layers: CryptoKey[] = [];
     if (chiave) layers.push(await deriveKey(chiave, await saltFor(gameId, scope), iter));
     if (level >= 1) layers.push(levelKeys.get(level)!);
@@ -235,36 +238,66 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
   const knownPaths = new Set<string>();
   const fsRoot = path.join(CONTENT, 'fs');
 
-  for (const file of await walk(fsRoot)) {
-    const where = rel(file);
+  const fileEvents: { where: string; id: string }[] = [];
+  const all = await walk(fsRoot, true);
+  const imageFiles = new Map(all.filter((f) => IMAGE_RE.test(f)).map((f) => ['/' + path.relative(fsRoot, f).split(path.sep).join('/'), f]));
+  const sidecars = new Set<string>();
+  const docs: { file: string; vpath: string; image?: string }[] = [];
+  for (const file of all.filter((f) => f.endsWith('.md'))) {
     const vpath = '/' + path.relative(fsRoot, file).split(path.sep).join('/').replace(/\.md$/, '');
+    const image = imageFiles.get(vpath);
+    if (image) sidecars.add(vpath);
+    docs.push({ file, vpath, image });
+  }
+  // Images without a sidecar .md: public, no caption.
+  for (const [vpath, image] of imageFiles) if (!sidecars.has(vpath)) docs.push({ file: image, vpath, image });
+
+  for (const { file, vpath, image } of docs) {
+    const where = rel(file);
     if (!/^[\w./-]+$/.test(vpath)) throw new ContentError(`${where}: usa solo lettere, numeri, . - _ nei nomi`);
-    const { front, body } = parseFrontmatter(await readFile(file, 'utf8'), where);
+    const { front, body } = file === image ? { front: {} as Front, body: '' } : parseFrontmatter(await readFile(file, 'utf8'), where);
     const level = asLevel(front.livello, where);
     const encrypted = front.cifrato === true;
     const chiave = str(front.chiave);
     if (encrypted && !chiave) throw new ContentError(`${where}: "cifrato: sì" richiede "chiave"`);
     if (!encrypted && chiave) warn(`${where}: "chiave" ignorata perché il file non è cifrato`);
     if (chiave) secrets.push({ value: normalizeSecret(chiave), what: `chiave di ${vpath}` });
+    const dopo = str(front.dopo_evento);
+    if (dopo) fileEvents.push({ where, id: dopo });
 
     const homeMatch = vpath.match(/^\/home\/([^/]+)\//);
     const owner = homeMatch?.[1];
     if (vpath.startsWith('/home/') && !owner) throw new ContentError(`${where}: i file in home/ vanno in home/<utente>/`);
     if (owner && !users.has(owner)) throw new ContentError(`${where}: utente "${owner}" non definito in gioco.json`);
 
-    const plain = extractSegments(body, level, where);
+    const meta: DocBody['m'] = {};
+    if (front.autore) meta.autore = String(front.autore);
+    if (front.modificato) meta.modificato = String(front.modificato);
+    let plain: PlainDoc;
+    let size: number;
+    if (image) {
+      const bytes = await readFile(image);
+      const ext = image.split('.').pop()!.toLowerCase();
+      plain = { text: `data:${MIME[ext]};base64,${bytes.toString('base64')}`, segments: [] };
+      meta.didascalia = body.trim() || path.basename(vpath);
+      size = bytes.length;
+    } else {
+      plain = extractSegments(body, level, where);
+      size = [...body].length;
+    }
     const entry: FileEntry = {
       p: vpath,
       l: level,
       e: encrypted,
-      s: [...body].length,
-      b: await sealDoc(plain, level, chiave, `file:${vpath}`, where),
+      s: size,
+      b: await sealDoc(plain, level, chiave, `file:${vpath}`, where, meta),
+      ...(dopo ? { v: dopo } : {}),
     };
     knownPaths.add(vpath);
     if (owner) {
       if (!homeFiles.has(owner)) homeFiles.set(owner, []);
       homeFiles.get(owner)!.push(entry);
-      lockedTexts.push({ text: plain.text, where });
+      if (!image) lockedTexts.push({ text: plain.text, where });
     } else {
       publicFiles.push(entry);
     }
@@ -307,7 +340,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
   /* Events ---------------------------------------------------------- */
   const events: EventEntry[] = [];
   const eventIds = new Set<string>();
-  const eventRefs: { where: string; id: string }[] = [...mailEvents];
+  const eventRefs: { where: string; id: string }[] = [...mailEvents, ...fileEvents];
   for (const file of await walk(path.join(CONTENT, 'eventi'))) {
     const where = rel(file);
     const { front, body } = parseFrontmatter(await readFile(file, 'utf8'), where);
@@ -366,7 +399,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
       posta: mail.get(u.nome) ?? [],
     };
     const key = await deriveKey(u.password, await saltFor(gameId, `utente:${u.nome}`), iter);
-    utenti.push({ n: u.nome, k: await encryptText(key, JSON.stringify(keyring)) });
+    utenti.push({ n: u.nome, k: await encryptText(key, JSON.stringify(keyring)), ...(u.nascosto ? { h: true } : {}) });
   }
 
   const check: Manifest['check'] = {};

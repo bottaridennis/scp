@@ -7,6 +7,7 @@ livello: 0
   ------------------------------------------------------------
   110       Agente Bruno Leone       Sicurezza
   118       Posto di guardia B       Sicurezza
+  150       Dario Marino             Logistica e magazzino
   201       Centralino               Comunicazioni
   214       Giulia Rinaldi           Comunicazioni
   231       Dr. Marco Ferri          Ricerca — Ala Est
