@@ -659,3 +659,4 @@ button { font: inherit; color: inherit; }
 .br-narrator h2 { color: #7a1f1f; }
 .br-page p, .br-page li, .br-page td { overflow-wrap: anywhere; }
 .radio-listen { align-self: flex-start; margin-bottom: 8px; font-family: var(--ui-font); font-size: 12px; }
+.voice-listen { margin: 6px 0 4px; font-size: 12px; }

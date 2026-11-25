@@ -30,9 +30,14 @@ export class Sound {
    * when sounds are on; `force` is for an explicit "play" button.
    */
   voice(file: string, force = false): HTMLAudioElement | null {
+    return this.play(`${import.meta.env.BASE_URL}audio/${file}`, force);
+  }
+
+  /** Plays any audio URL (e.g. a decrypted recording) with the same rules as `voice`. */
+  play(url: string, force = false): HTMLAudioElement | null {
     if (!this.enabled && !force) return null;
     this.stopVoice();
-    const audio = new Audio(`${import.meta.env.BASE_URL}audio/${file}`);
+    const audio = new Audio(url);
     audio.volume = 0.9;
     this.current = audio;
     audio.addEventListener('ended', () => {

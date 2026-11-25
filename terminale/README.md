@@ -94,11 +94,16 @@ Spotify, caricato solo quando si apre l'app; il **Browser** ha una pagina dedica
 
 ## Voci registrate
 
-Le registrazioni sono in `public/audio/` (MP3 mono 64 kbps), generate con ElevenLabs. Sono
-file pubblici, quindi il build accetta `audio:` solo su trasmissioni radio ed eventi di
-livello 0. Si collegano con `audio: <file>.mp3` (radio, eventi) e con `"audio"` in `intro`
-(`gioco.json`). Partono da sole solo con i suoni attivi; i pulsanti «Ascolta» funzionano
-sempre.
+Registrazioni generate con ElevenLabs (MP3 mono 64 kbps). Si collegano con
+`audio: <file>.mp3` su radio, eventi e voci della fonoteca, e con `"audio"` in `intro`
+(`gioco.json`).
+
+- **Livello 0**: file pubblici in `public/audio/`.
+- **Livello ≥ 1**: sorgenti in `content/audio/`; il build le cifra con la chiave del livello
+  (AES-GCM) in `public/data/audio/<hash>.bin`. Il browser le scarica e decifra solo quando
+  un account aperto ha quel livello.
+
+Partono da sole solo con i suoni attivi; i pulsanti «Ascolta» funzionano sempre.
 
 ## Struttura
 

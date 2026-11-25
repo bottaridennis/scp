@@ -11,7 +11,7 @@ import { EventRunner } from './events.ts';
 import { Game, GUEST } from './game.ts';
 import { GameFS } from './game-fs.ts';
 import type { Store } from './state.ts';
-import type { EventEntry, EventPayload, Manifest } from './types.ts';
+import type { AudioRef, EventEntry, EventPayload, Manifest } from './types.ts';
 import { MountFS } from './vfs.ts';
 
 export type EventPresenter = (ev: EventEntry, payload: EventPayload, text: string) => Promise<void>;
@@ -140,6 +140,27 @@ export class Session {
     this.state.replied.push(key);
     this.events.signal(signal);
     return true;
+  }
+
+  /**
+   * Plays the recording attached to a station, event or voice: public (`a`) or encrypted (`ax`,
+   * decrypted with the clearance of any open account). Resolves to the playing element, or null.
+   */
+  async playRecording(item: { a?: string; ax?: AudioRef }, force = false): Promise<HTMLAudioElement | null> {
+    if (!this.sound.enabled && !force) return null;
+    if (item.a) return this.sound.voice(item.a, force);
+    if (!item.ax) return null;
+    const account = this.highest();
+    if (!account || account.level < item.ax.l) return null;
+    const url = await account.openAudio(item.ax);
+    if (!url) return null;
+    const audio = this.sound.play(url, force);
+    const release = () => URL.revokeObjectURL(url);
+    if (audio) {
+      audio.addEventListener('ended', release);
+      audio.addEventListener('pause', release);
+    } else release();
+    return audio;
   }
 
   /** Voices of the catalogue unlocked so far. */

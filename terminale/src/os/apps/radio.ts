@@ -86,25 +86,28 @@ export const radioApp: AppDef = {
       const body = h('div', { class: 'crt-line' });
       out.append(head, body);
       session.sound.alert('sistema');
-      if (station.a) {
-        const file = station.a;
+      if (station.a || station.ax) {
+        const current = station;
         const listen = h('button', { type: 'button', class: 'btn radio-listen' }, '▶ Ascolta la trasmissione');
+        const idle = () => {
+          playing = null;
+          listen.textContent = '▶ Ascolta la trasmissione';
+        };
+        const start = async (force: boolean) => {
+          const audio = await session.playRecording(current, force);
+          if (my !== typing || !audio) return;
+          playing = audio;
+          listen.textContent = '■ Ferma';
+          audio.addEventListener('ended', idle);
+        };
         listen.addEventListener('click', () => {
           if (playing) {
             stopAudio();
-            listen.textContent = '▶ Ascolta la trasmissione';
-          } else {
-            playing = session.sound.voice(file, true);
-            listen.textContent = '■ Ferma';
-            playing?.addEventListener('ended', () => {
-              playing = null;
-              listen.textContent = '▶ Ascolta la trasmissione';
-            });
-          }
+            idle();
+          } else void start(true);
         });
         out.prepend(listen);
-        playing = session.sound.voice(file);
-        if (playing) listen.textContent = '■ Ferma';
+        void start(false);
       }
       for (let i = 0; i <= text.length; i += 2) {
         if (my !== typing) return;

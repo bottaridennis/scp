@@ -122,7 +122,7 @@ async function showEnding(session: Session, desktop: Desktop, text: string) {
 export function installEventPresenter(session: Session, desktop: Desktop) {
   desktop.register(messagesApp);
   session.presenter = async (ev: EventEntry, payload: EventPayload, text: string) => {
-    if (ev.a) session.sound.voice(ev.a);
+    void session.playRecording(ev);
     switch (ev.tipo) {
       case 'sistema':
         session.sound.alert('sistema');

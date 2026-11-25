@@ -69,6 +69,9 @@ export type EventKind = 'sistema' | 'intruso' | 'glitch' | 'finale';
 
 export type EventPayload = { da?: string; testo: DocBody };
 
+/** An encrypted recording in public/data/audio/, readable with the level key `l`. */
+export type AudioRef = { f: string; l: number };
+
 export type EventEntry = {
   id: string;
   l: number;
@@ -87,6 +90,8 @@ export type EventEntry = {
   ritardo: number;
   /** Recorded voice in public/audio/, played when the event fires (sounds on). */
   a?: string;
+  /** Encrypted recorded voice (events above level 0). */
+  ax?: AudioRef;
   b: Sealed<EventPayload>;
 };
 
@@ -142,6 +147,8 @@ export type RadioEntry = {
   o?: string;
   /** Recorded transmission in public/audio/. */
   a?: string;
+  /** Encrypted recorded transmission (stations above level 0). */
+  ax?: AudioRef;
   b: Sealed<RadioPayload>;
 };
 
@@ -149,6 +156,8 @@ export type VoicePayload = { nome: string; testo: DocBody };
 export type VoiceEntry = {
   id: string;
   l: number;
+  /** Encrypted sample of the voice. */
+  ax?: AudioRef;
   cond: { lettura?: string; evento?: string };
   b: Sealed<VoicePayload>;
 };

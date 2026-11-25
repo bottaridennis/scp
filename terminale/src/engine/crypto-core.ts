@@ -72,6 +72,21 @@ export async function decryptText(key: CryptoKey, env: Envelope): Promise<string
   return decoder.decode(plain);
 }
 
+/** Encrypts raw bytes as iv (12 bytes) followed by the AES-GCM ciphertext. */
+export async function encryptBytes(key: CryptoKey, bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes));
+  const out = new Uint8Array(12 + ct.length);
+  out.set(iv);
+  out.set(ct, 12);
+  return out;
+}
+
+/** Throws if the key is wrong. */
+export async function decryptBytes(key: CryptoKey, data: Uint8Array<ArrayBuffer>): Promise<ArrayBuffer> {
+  return subtle.decrypt({ name: 'AES-GCM', iv: data.slice(0, 12) }, key, data.slice(12));
+}
+
 export function isEnvelope(x: unknown): x is Envelope {
   return typeof x === 'object' && x !== null && 'iv' in x && 'ct' in x;
 }

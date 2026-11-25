@@ -5,6 +5,7 @@ tipo: intruso
 da: a.costa
 dopo_lettura: /home/a.costa/.registro-personale.enc
 ritardo: 8
+audio: supplica.mp3
 ---
 no. non quel registro. l'ho scritto con lui che mi dettava.
 sono io, anna. sono ancora qui sotto. ti sento leggere.

@@ -17,6 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   deriveKey,
+  encryptBytes,
   encryptText,
   importRawKey,
   normalizeSecret,
@@ -25,6 +26,7 @@ import {
   sha256Hex,
 } from '../src/engine/crypto-core.ts';
 import type {
+  AudioRef,
   DocBody,
   EventEntry,
   EventKind,
@@ -381,7 +383,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     const giorno = str(front.giorno);
     if (giorno && !/^\d{2}-\d{2}$/.test(giorno)) throw new ContentError(`${where}: giorno deve essere MM-GG`);
 
-    if (front.audio && (level > 0 || comando)) throw new ContentError(`${where}: l'audio è pubblico, usalo solo per eventi di livello 0`);
+    if (front.audio && comando) throw new ContentError(`${where}: un evento con comando non può avere audio`);
     const plain = extractSegments(body, level, where);
     const payload: EventPayload = { da: str(front.da), testo: { t: plain.text, g: [] } };
     for (const seg of plain.segments) {
@@ -404,7 +406,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
       tipo,
       cond: { lettura, login, evento, cmd, ora: str(front.ora), giorno: str(front.giorno) },
       ritardo: Number(front.ritardo ?? 0) || 0,
-      ...audioField(front.audio, where),
+      ...(await audioFor(front.audio, level, where)),
       b: await seal(payload, layers),
     });
   }
@@ -420,6 +422,24 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     if (level >= 1) lockedTexts.push({ text, where });
     return { b: await seal(value, level >= 1 ? [levelKeys.get(level)!] : []) };
   }
+  /**
+   * `audio: file.mp3`. Level 0: a public file in public/audio/. Above level 0: a source in
+   * content/audio/, encrypted with the level key into public/data/audio/ under an opaque name.
+   */
+  async function audioFor(value: unknown, level: number, where: string): Promise<{ a?: string; ax?: AudioRef }> {
+    if (level === 0) return audioField(value, where);
+    const file = typeof value === 'string' ? value.trim() : '';
+    if (!file) return {};
+    if (!/^[\w.-]+\.mp3$/.test(file)) throw new ContentError(`${where}: audio "${file}" non valido`);
+    const src = path.join(CONTENT, 'audio', file);
+    if (!existsSync(src)) throw new ContentError(`${where}: content/audio/${file} non esiste`);
+    const name = `${(await sha256Hex(`${gameId}|audio|${file}`)).slice(0, 20)}.bin`;
+    await mkdir(path.join(OUT_DIR, 'audio'), { recursive: true });
+    const bytes = new Uint8Array(await readFile(src));
+    await writeFile(path.join(OUT_DIR, 'audio', name), await encryptBytes(levelKeys.get(level)!, bytes));
+    return { ax: { f: name, l: level } };
+  }
+
   async function segmented(body: string, level: number, where: string): Promise<DocBody> {
     const plain = extractSegments(body, level, where);
     const g: Segment[] = [];
@@ -441,8 +461,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     const o = str(front.ora);
     if (o && !/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(o)) throw new ContentError(`${where}: ora deve essere HH:MM-HH:MM`);
     const testo = await segmented(body, level, where);
-    if (front.audio && level > 0) throw new ContentError(`${where}: l'audio è pubblico, usalo solo per trasmissioni di livello 0`);
-    radio.push({ f, l: level, ...(v ? { v } : {}), ...(o ? { o } : {}), ...audioField(front.audio, where), ...(await sealLevel({ nome: String(front.nome ?? 'Trasmissione'), testo }, level, where, body)) });
+    radio.push({ f, l: level, ...(v ? { v } : {}), ...(o ? { o } : {}), ...(await audioFor(front.audio, level, where)), ...(await sealLevel({ nome: String(front.nome ?? 'Trasmissione'), testo }, level, where, body)) });
   }
 
   const voci: VoiceEntry[] = [];
@@ -455,7 +474,9 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     if (lettura && !knownPaths.has(lettura)) throw new ContentError(`${where}: dopo_lettura "${lettura}" non esiste`);
     if (evento) eventRefs.push({ where, id: evento });
     const testo = await segmented(body, level, where);
-    voci.push({ id: path.basename(file, '.md'), l: level, cond: { lettura, evento }, ...(await sealLevel({ nome: String(front.nome ?? '???'), testo }, level, where, body)) });
+    const voiceAudio = await audioFor(front.audio, level, where);
+    if (voiceAudio.a) throw new ContentError(`${where}: le voci della fonoteca devono avere livello ≥ 1 per avere audio`);
+    voci.push({ id: path.basename(file, '.md'), l: level, cond: { lettura, evento }, ...voiceAudio, ...(await sealLevel({ nome: String(front.nome ?? '???'), testo }, level, where, body)) });
   }
 
   const web: WebEntry[] = [];
