@@ -14,6 +14,13 @@
 - Il percorso qui sotto funziona tutto da un unico terminale (con `login`), oppure
   cambiando profilo dalla schermata di login e aprendo un terminale per ciascuno.
 
+## Se ti blocchi
+
+- **Taccuino** (sul desktop o `taccuino` nel Terminale): obiettivo attuale e appunti presi
+  automaticamente mentre leggi i documenti.
+- **Aiuti**: pulsante «Chiedi un aiuto» nel Taccuino o comando `aiuto`, tre per obiettivo,
+  sempre più precisi (l'ultimo dice esattamente dove guardare).
+
 ## Credenziali e chiavi
 
 | Cosa                          | Valore              | Dove si trova                                              |

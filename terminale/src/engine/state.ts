@@ -22,6 +22,9 @@ export type SaveState = {
   /** Mail replies already sent ("user/mailId"). */
   replied: string[];
   introSeen: boolean;
+  /** Notebook: hints asked per objective, notes already seen. */
+  hints: Record<string, number>;
+  notesSeen: string[];
   bootSeen: boolean;
   startedAt: number;
   settings: { theme: Theme; audio: boolean; os: OsTheme };
@@ -42,6 +45,8 @@ function fresh(): SaveState {
     repaired: [],
     replied: [],
     introSeen: false,
+    hints: {},
+    notesSeen: [],
     bootSeen: false,
     startedAt: Date.now(),
     settings: { theme: 'verde', audio: false, os: 'classico' },

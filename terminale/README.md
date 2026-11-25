@@ -276,6 +276,36 @@ ritardo: 15
 Testo del messaggio.
 ```
 
+### Taccuino (obiettivi, aiuti e appunti)
+
+```markdown
+# content/taccuino/<nome>.md — un obiettivo
+---
+tipo: obiettivo
+titolo: Entrare nel profilo di Giulia Rinaldi
+livello: 0                    # cifrato con la chiave di questo livello
+inizio_login: g.rinaldi       # facoltativo: inizio_lettura / inizio_login / inizio_evento
+fine_login: m.ferri           # fine_lettura / fine_login / fine_evento ("a|b" = uno dei due)
+---
+## Aiuto 1
+…
+## Aiuto 2
+…
+## Aiuto 3
+…  (mai la password scritta per intero: il controllo anti-spoiler la segnalerebbe)
+
+# content/taccuino/<nome>.md — un appunto automatico
+---
+tipo: nota
+livello: 1
+dopo_lettura: /archivio/comunicazioni/centralino-0303.log
+---
+Testo dell'appunto.
+```
+
+L'obiettivo mostrato è il primo, in ordine di nome file, già iniziato e non ancora concluso
+(`ultimo: sì` per uno senza fine). Gli aiuti si chiedono dall'app Taccuino o con `aiuto`.
+
 ### Pagine web (app Browser)
 
 ```markdown

@@ -241,7 +241,7 @@ export class Desktop {
   private fileIcon(node: VNode) {
     const el = h(
       'button',
-      { type: 'button', class: 'desk-icon is-file', title: node.path },
+      { type: 'button', class: 'desk-icon is-file', title: node.path, 'data-key': `file:${node.path}` },
       h('span', { class: 'desk-icon-img', html: nodeIcon(node) }),
       h('span', { class: 'desk-icon-label' }, node.name),
     );
@@ -258,7 +258,122 @@ export class Desktop {
     void this.deskFiles().then((files) => {
       if (my !== this.iconsToken) return;
       this.iconsEl.replaceChildren(...this.appIcons(), ...(files.length ? [h('div', { class: 'desk-icons-sep', 'aria-hidden': 'true' }), ...files.map((f) => this.fileIcon(f))] : []));
+      this.layoutIcons();
     });
+  }
+
+  /* Icon arrangement: free placement on a grid, saved per profile ---- */
+
+  private static readonly CELL = { w: 90, h: 92 };
+
+  private iconEls() {
+    return [...this.iconsEl.querySelectorAll<HTMLElement>('.desk-icon')];
+  }
+
+  /** Applies saved cells; icons without one take the first free cell (column by column). */
+  private layoutIcons() {
+    const saved = this.profile?.icons;
+    const els = this.iconEls();
+    for (const el of els) this.makeDraggable(el);
+    if (!saved || !Object.keys(saved).length) {
+      this.iconsEl.classList.remove('is-free');
+      return;
+    }
+    this.iconsEl.classList.add('is-free');
+    const rows = Math.max(1, Math.floor(((this.iconsEl.clientHeight || 600) + 6) / Desktop.CELL.h));
+    const taken = new Set(Object.values(saved).map((p) => `${p.c},${p.r}`));
+    let next = 0;
+    const free = () => {
+      while (taken.has(`${Math.floor(next / rows)},${next % rows}`)) next++;
+      const cell = { c: Math.floor(next / rows), r: next % rows };
+      taken.add(`${cell.c},${cell.r}`);
+      return cell;
+    };
+    for (const el of els) {
+      const key = el.dataset.key!;
+      const cell = saved[key] ?? free();
+      el.style.left = `${cell.c * Desktop.CELL.w}px`;
+      el.style.top = `${cell.r * Desktop.CELL.h}px`;
+    }
+  }
+
+  /** Current cells of all icons (from the automatic layout, the first time an icon is moved). */
+  private currentCells(): Record<string, { c: number; r: number }> {
+    const out: Record<string, { c: number; r: number }> = {};
+    const rows = Math.max(1, Math.floor((this.iconsEl.clientHeight + 6) / Desktop.CELL.h));
+    this.iconEls().forEach((el, i) => {
+      out[el.dataset.key!] = { c: Math.floor(i / rows), r: i % rows };
+    });
+    return out;
+  }
+
+  private makeDraggable(el: HTMLElement) {
+    if (el.dataset.drag) return;
+    el.dataset.drag = '1';
+    el.addEventListener('pointerdown', (down) => {
+      if (down.button !== 0) return;
+      const startX = down.clientX;
+      const startY = down.clientY;
+      let dragging = false;
+      let origin = { x: 0, y: 0 };
+      const move = (e: PointerEvent) => {
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (!dragging) {
+          if (Math.hypot(dx, dy) < 6) return;
+          dragging = true;
+          if (!this.iconsEl.classList.contains('is-free')) {
+            // First move: freeze the automatic layout so nothing else jumps.
+            if (this.profile) this.profile.icons = this.currentCells();
+            this.layoutIcons();
+          }
+          origin = { x: el.offsetLeft, y: el.offsetTop };
+          el.classList.add('is-dragging');
+          el.setPointerCapture(down.pointerId);
+        }
+        el.style.left = `${origin.x + dx}px`;
+        el.style.top = `${origin.y + dy}px`;
+      };
+      const up = () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        if (!dragging) return;
+        el.classList.remove('is-dragging');
+        const profile = this.profile;
+        if (!profile) return;
+        const maxR = Math.max(0, Math.floor(this.iconsEl.clientHeight / Desktop.CELL.h) - 1);
+        const maxC = Math.max(0, Math.floor(this.desk.clientWidth / Desktop.CELL.w) - 1);
+        const cell = {
+          c: Math.min(maxC, Math.max(0, Math.round(el.offsetLeft / Desktop.CELL.w))),
+          r: Math.min(maxR, Math.max(0, Math.round(el.offsetTop / Desktop.CELL.h))),
+        };
+        const icons = (profile.icons ??= {});
+        const key = el.dataset.key!;
+        const old = icons[key];
+        // Dropping on another icon swaps the two.
+        const other = Object.keys(icons).find((k) => k !== key && icons[k].c === cell.c && icons[k].r === cell.r);
+        if (other && old) icons[other] = old;
+        icons[key] = cell;
+        this.profiles.save(this.user, profile);
+        this.layoutIcons();
+        // A drag is not a click.
+        el.addEventListener('click', (e) => e.stopImmediatePropagation(), { capture: true, once: true });
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+    });
+  }
+
+  /** "Disponi icone": back to the automatic layout. */
+  resetIcons() {
+    if (!this.profile) return;
+    delete this.profile.icons;
+    this.profiles.save(this.user, this.profile);
+    for (const el of this.iconEls()) {
+      el.style.left = '';
+      el.style.top = '';
+    }
+    this.layoutIcons();
   }
 
   private appIcons() {
@@ -266,7 +381,7 @@ export class Desktop {
         const badge = app.badge?.(this.session);
         const el = h(
           'button',
-          { type: 'button', class: 'desk-icon', title: app.name },
+          { type: 'button', class: 'desk-icon', title: app.name, 'data-key': `app:${app.id}` },
           h('span', { class: 'desk-icon-img', html: app.icon }),
           h('span', { class: 'desk-icon-label' }, app.name),
           badge ? h('span', { class: 'desk-icon-badge' }, badge) : null,

@@ -11,7 +11,7 @@ import { EventRunner } from './events.ts';
 import { Game, GUEST } from './game.ts';
 import { GameFS } from './game-fs.ts';
 import type { Store } from './state.ts';
-import type { AudioRef, EventEntry, EventPayload, Manifest } from './types.ts';
+import type { AudioRef, Cond, EventEntry, EventPayload, Manifest, NoteEntry, ObjectiveEntry } from './types.ts';
 import { MountFS } from './vfs.ts';
 
 export type EventPresenter = (ev: EventEntry, payload: EventPayload, text: string) => Promise<void>;
@@ -106,6 +106,7 @@ export class Session {
   recordLogin(name: string) {
     if (name !== GUEST && !this.state.logins.includes(name)) this.state.logins.push(name);
     this.store.save();
+    this.notify();
     this.events.check();
   }
 
@@ -163,6 +164,60 @@ export class Session {
     return audio;
   }
 
+  /* Notebook ------------------------------------------------------ */
+
+  /** True when every part of the condition holds ("a|b" in evento: any of them). */
+  condMet(c: Cond) {
+    const st = this.state;
+    if (c.lettura && !st.read.includes(c.lettura)) return false;
+    if (c.login && !st.logins.includes(c.login)) return false;
+    if (c.evento && !c.evento.split('|').some((e) => st.fired.includes(e))) return false;
+    return true;
+  }
+
+  /** The objective to pursue now: the first one started and not yet completed. */
+  currentObjective(): ObjectiveEntry | null {
+    for (const o of this.manifest.taccuino.o) {
+      if (o.start && !this.condMet(o.start)) continue;
+      const done = Object.keys(o.end).length > 0 && this.condMet(o.end);
+      if (!done) return o;
+    }
+    return null;
+  }
+
+  /** Notes written so far whose level some open account can read, newest first. */
+  notes(): NoteEntry[] {
+    const level = this.highest()?.level ?? 0;
+    return this.manifest.taccuino.n.filter((n) => n.l <= level && this.condMet(n.cond)).reverse();
+  }
+
+  /** Decrypts a notebook entry with the clearance of any open account. */
+  openNotebook<T>(entry: { l: number; b: import('./types.ts').Sealed<T> }): Promise<T | null> {
+    const account = this.highest();
+    return account ? account.openLevel(entry.b, entry.l) : Promise.resolve(null);
+  }
+
+  /** Reveals the next hint for the current objective; returns how many are shown. */
+  nextHint(o: ObjectiveEntry) {
+    const n = Math.min(3, (this.state.hints[o.id] ?? 0) + 1);
+    this.state.hints[o.id] = n;
+    this.store.save();
+    this.notify();
+    return n;
+  }
+
+  unseenNotes() {
+    return this.notes().filter((n) => !this.state.notesSeen.includes(n.id)).length;
+  }
+
+  markNotesSeen() {
+    const ids = this.notes().map((n) => n.id).filter((id) => !this.state.notesSeen.includes(id));
+    if (!ids.length) return;
+    this.state.notesSeen.push(...ids);
+    this.store.save();
+    this.notify();
+  }
+
   /** Voices of the catalogue unlocked so far. */
   voiceUnlocked(v: { cond: { lettura?: string; evento?: string } }) {
     return (!v.cond.lettura || this.state.read.includes(v.cond.lettura)) && (!v.cond.evento || this.state.fired.includes(v.cond.evento));
@@ -174,6 +229,7 @@ export class Session {
     if (!this.state.read.includes(path)) {
       this.state.read.push(path);
       this.store.save();
+      this.notify(); // the notebook may have something new
     }
     this.events.check();
   }

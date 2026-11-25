@@ -27,6 +27,9 @@ import {
 } from '../src/engine/crypto-core.ts';
 import type {
   AudioRef,
+  Cond,
+  NoteEntry,
+  ObjectiveEntry,
   DocBody,
   EventEntry,
   EventKind,
@@ -500,6 +503,36 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     });
   }
 
+  /* Notebook (taccuino) ---------------------------------------------- */
+  const condOf = (front: Record<string, unknown>, prefix: string, where: string): Cond | undefined => {
+    const lettura = str(front[`${prefix}lettura`]);
+    const login = str(front[`${prefix}login`])?.toLowerCase();
+    const evento = str(front[`${prefix}evento`]);
+    if (lettura && !knownPaths.has(lettura)) throw new ContentError(`${where}: ${prefix}lettura "${lettura}" non esiste`);
+    if (login && !users.has(login)) throw new ContentError(`${where}: ${prefix}login "${login}" non è un utente`);
+    for (const id of evento?.split('|') ?? []) if (!eventIds.has(id)) throw new ContentError(`${where}: l'evento "${id}" non esiste`);
+    return lettura || login || evento ? { ...(lettura ? { lettura } : {}), ...(login ? { login } : {}), ...(evento ? { evento } : {}) } : undefined;
+  };
+  const taccuino: { o: ObjectiveEntry[]; n: NoteEntry[] } = { o: [], n: [] };
+  for (const file of await walk(path.join(CONTENT, 'taccuino'))) {
+    const where = rel(file);
+    const { front, body } = parseFrontmatter(await readFile(file, 'utf8'), where);
+    const id = path.basename(file, '.md');
+    const level = asLevel(front.livello, where);
+    if (front.tipo === 'obiettivo') {
+      const end = condOf(front, 'fine_', where) ?? (front.ultimo ? {} : undefined);
+      if (!end) throw new ContentError(`${where}: un obiettivo ha bisogno di fine_lettura, fine_login o fine_evento`);
+      const aiuti = body.split(/^##\s*Aiuto.*$/m).slice(1).map((t) => t.trim()).filter(Boolean);
+      if (aiuti.length !== 3) throw new ContentError(`${where}: servono tre sezioni "## Aiuto"`);
+      const titolo = String(front.titolo ?? id);
+      const start = condOf(front, 'inizio_', where);
+      taccuino.o.push({ id, l: level, ...(start ? { start } : {}), end, ...(await sealLevel({ titolo, aiuti }, level, where, [titolo, ...aiuti].join('\n'))) });
+    } else {
+      const cond = condOf(front, 'dopo_', where) ?? {};
+      taccuino.n.push({ id, l: level, cond, ...(await sealLevel({ testo: body.trim() }, level, where, body)) });
+    }
+  }
+
   const camere: CameraEntry[] = [];
   for (const file of await walk(path.join(CONTENT, 'telecamere'))) {
     const where = rel(file);
@@ -563,6 +596,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
     voci,
     camere,
     web,
+    taccuino,
   };
   const json = JSON.stringify(manifest);
 

@@ -34,6 +34,8 @@ export const settingsApp: AppDef = {
           { class: 'group' },
           h('legend', {}, 'Sfondo del desktop'),
           ...Object.entries(WALLPAPERS).map(([k, label]) => radio('wall', k, label, k === current, () => desktop.setWallpaper(k))),
+          h('p', { class: 'muted' }, 'Le icone si spostano trascinandole.'),
+          h('button', { type: 'button', class: 'btn', onclick: () => desktop.resetIcons() }, 'Riordina le icone'),
         ),
         h(
           'fieldset',

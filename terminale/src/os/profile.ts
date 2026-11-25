@@ -12,6 +12,8 @@ export type Profile = {
   windows: SavedWindow[];
   recent: { path: string; title: string; at: number }[];
   visited: boolean;
+  /** Desktop icon positions as grid cells ("app:<id>" / "file:<path>"); empty = automatic layout. */
+  icons?: Record<string, { c: number; r: number }>;
 };
 
 const fresh = (): Profile => ({ wallpaper: 'fondazione', windows: [], recent: [], visited: false });
