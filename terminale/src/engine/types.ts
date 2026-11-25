@@ -86,6 +86,8 @@ export type Manifest = {
     logo: string[];
     boot: string[];
     crediti: string[];
+    /** Optional mount of the real SCP archive (public data, levels are a game rule). */
+    archivio?: ArchiveConfig;
   };
   /** Per-level check values used to validate keys restored from localStorage. */
   check: Record<string, Envelope>;
@@ -93,4 +95,15 @@ export type Manifest = {
   utenti: { n: string; k: Envelope }[];
   files: FileEntry[];
   eventi: EventEntry[];
+};
+
+export type ArchiveConfig = {
+  /** Mount point, e.g. /archivio-scp */
+  cartella: string;
+  /** Level required per object-class tag; "*" for unknown/special classes. */
+  livelli: Record<string, number>;
+  /** Extra levels required for addenda, logs and other sections (max 5). */
+  livello_sezioni: number;
+  /** "bloccati": shown with a lock and [CLASSIFICATO]; "nascosti": not listed. */
+  sopra_livello: 'bloccati' | 'nascosti';
 };

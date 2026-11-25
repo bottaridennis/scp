@@ -1,11 +1,14 @@
-/** Command interpreter: parses input, runs commands, completes with Tab. */
-import { Sound } from './audio.ts';
-import { EventRunner } from './events.ts';
-import { GUEST, type Game } from './game.ts';
+/**
+ * Command interpreter of one terminal. Each terminal has its own account
+ * (`login` here changes only this terminal) and its own working directory;
+ * files are read through the shared virtual filesystem.
+ */
+import type { Game } from './game.ts';
+import { GUEST } from './game.ts';
+import type { Session } from './session.ts';
 import type { Theme } from './state.ts';
-import { SPEED, type Line, type Terminal } from './terminal.ts';
-import type { EventEntry, EventPayload, FileEntry } from './types.ts';
-import { normalizePath, Tree } from './vfs.ts';
+import type { Line, Terminal } from './terminal.ts';
+import { basename, normalizePath, type ReadResult, type VNode } from './vfs.ts';
 
 type Mode = { kind: 'command' } | { kind: 'password'; user: string } | { kind: 'confirm-reset' };
 
@@ -15,43 +18,57 @@ type Command = {
   run: (args: string[], raw: string) => Promise<void> | void;
   /** What Tab completes for the arguments. */
   complete?: 'path' | 'user' | string[];
-  hidden?: boolean;
 };
 
-const ORDER = ['help', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'search', 'decrypt', 'mail', 'clear', 'audio', 'tema', 'crediti', 'reset'];
+export type ShellHost = {
+  /** Opens a file or folder in the graphical apps (`open`). */
+  open?: (path: string, account: Game) => void;
+  /** Closes the terminal window (`exit`). */
+  exit?: () => void;
+  /** Called when this terminal's user changes. */
+  userChanged?: (account: Game) => void;
+};
+
+const ORDER = ['help', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'open', 'search', 'decrypt', 'mail', 'clear', 'audio', 'tema', 'crediti', 'reset', 'exit'];
 
 export class Shell {
   private readonly term: Terminal;
-  private readonly game: Game;
-  readonly sound = new Sound();
-  readonly events: EventRunner;
+  private readonly session: Session;
+  readonly account: Game;
+  private readonly host: ShellHost;
   private mode: Mode = { kind: 'command' };
   private readonly commands: Record<string, Command>;
+  cwd: string;
 
-  constructor(term: Terminal, game: Game) {
+  constructor(term: Terminal, session: Session, account: Game, host: ShellHost = {}) {
     this.term = term;
-    this.game = game;
-    this.events = new EventRunner(game, (ev, payload) => this.showEvent(ev, payload));
+    this.session = session;
+    this.account = account;
+    this.host = host;
     this.commands = this.defineCommands();
+    this.cwd = this.home;
 
-    term.history = [...game.store.state.history];
+    term.history = [...session.state.history];
     term.onSubmit = (value) => void this.handle(value);
     term.onComplete = (value) => this.complete(value);
     term.onKey = () => {
-      this.sound.unlock();
-      this.sound.click();
+      session.sound.unlock();
+      session.sound.click();
     };
-    term.onType = () => this.sound.click();
-    this.sound.enabled = game.store.state.settings.audio;
-    applyTheme(game.store.state.settings.theme);
+    term.onType = () => session.sound.click();
+    this.updatePrompt();
+  }
+
+  private get fs() {
+    return this.session.fs;
   }
 
   private get state() {
-    return this.game.store.state;
+    return this.session.state;
   }
 
   private get home() {
-    return this.game.user === GUEST ? '/' : this.game.homeOf(this.game.user);
+    return this.account.user === GUEST ? '/' : this.account.homeOf(this.account.user);
   }
 
   /* Prompt -------------------------------------------------------- */
@@ -67,28 +84,29 @@ export class Shell {
       this.term.setPrompt('Conferma: ');
       return;
     }
-    const cwd = this.state.cwd;
     const home = this.home;
+    const cwd = this.cwd;
     const shown = home !== '/' && (cwd === home || cwd.startsWith(`${home}/`)) ? `~${cwd.slice(home.length)}` : cwd;
-    this.term.setPrompt(`${this.game.user}@${this.game.manifest.meta.host}:${shown}$ `);
-  }
-
-  /* Tree ---------------------------------------------------------- */
-
-  private tree() {
-    const homes = this.game.users.map((u) => this.game.homeOf(u));
-    return new Tree(this.game.allFiles(), homes);
+    this.term.setPrompt(`${this.account.user}@${this.session.manifest.meta.host}:${shown}$ `);
   }
 
   private resolve(arg: string | undefined) {
-    return normalizePath(arg ?? '', this.state.cwd, this.home);
+    return normalizePath(arg ?? '', this.cwd, this.home);
   }
 
-  /** Returns the owner of a private path the current user may not open, if any. */
-  private foreignHome(p: string): string | null {
-    const m = p.match(/^\/home\/([^/]+)/);
-    if (!m || m[1] === this.game.user) return null;
-    return m[1];
+  /** Shows a waiting line if an operation (e.g. the remote archive) is slow. */
+  private async slow<T>(work: Promise<T>, label = 'Connessione all’archivio centrale…'): Promise<T> {
+    let shown = false;
+    const timer = setTimeout(() => {
+      shown = true;
+      void this.term.echo(label, 'dim');
+    }, 350);
+    try {
+      return await work;
+    } finally {
+      clearTimeout(timer);
+      void shown;
+    }
   }
 
   /* Input --------------------------------------------------------- */
@@ -105,8 +123,13 @@ export class Shell {
       this.mode = { kind: 'command' };
       this.updatePrompt();
       if (raw.trim() === 'RESET') {
-        this.events.cancelAll();
-        this.game.store.reset();
+        this.session.events.cancelAll();
+        this.session.store.reset();
+        try {
+          for (const k of Object.keys(localStorage)) if (k.startsWith('fondos:')) localStorage.removeItem(k);
+        } catch {
+          /* ignore */
+        }
         await this.term.echo('Progressi cancellati. Riavvio…', 'warn');
         setTimeout(() => location.reload(), 600);
       } else {
@@ -118,13 +141,13 @@ export class Shell {
     const line = raw.trim();
     if (!line) return;
     this.state.history = this.term.history.slice(-100);
-    this.game.store.save();
+    this.session.store.save();
 
-    const [name, ...args] = line.split(/\s+/);
+    const [name, ...args] = tokenize(line);
     const cmd = this.commands[name.toLowerCase()];
     if (cmd) {
       await cmd.run(args, line);
-    } else if (!(await this.events.tryCommand(line))) {
+    } else if (!(await this.session.events.tryCommand(line))) {
       await this.term.echo(`${name}: comando non trovato. Digita "help" per l'elenco dei comandi.`, 'err');
     }
     this.updatePrompt();
@@ -142,26 +165,30 @@ export class Shell {
           const lines: Line[] = [{ text: 'COMANDI DISPONIBILI', cls: 'h' }];
           for (const key of ORDER) {
             const c = this.commands[key];
-            if (!c || c.hidden) continue;
-            lines.push({ text: `  ${c.usage.padEnd(26)} ${c.help}` });
+            if (c) lines.push({ text: `  ${c.usage.padEnd(26)} ${c.help}` });
           }
-          lines.push({ text: '' }, { text: 'Tab completa i nomi dei file · ↑ ↓ scorrono la cronologia · un tasto salta il testo', cls: 'dim' });
+          lines.push(
+            { text: '' },
+            { text: 'Tab completa i nomi · ↑ ↓ cronologia · un tasto salta il testo', cls: 'dim' },
+            { text: 'I nomi con spazi vanno tra virgolette: cd "Serie I"', cls: 'dim' },
+            { text: 'I file che iniziano con "." sono nascosti: usa ls -a.', cls: 'dim' },
+          );
           return t.print(lines, { cps: 2000 });
         },
       },
       login: {
         usage: 'login <utente>',
-        help: 'accede con un altro account',
+        help: 'cambia utente in questo terminale',
         complete: 'user',
         run: async ([user]) => {
           if (!user) return t.echo('Uso: login <utente>', 'err');
           const name = user.toLowerCase();
-          if (name === this.game.user) return t.echo(`Sei già collegato come ${name}.`, 'dim');
+          if (name === this.account.user) return t.echo(`Sei già collegato come ${name}.`, 'dim');
           if (name === GUEST) return this.commands.logout.run([], 'logout');
-          if (!this.game.hasUser(name)) return t.echo(`login: utente "${name}" sconosciuto.`, 'err');
-          if (this.game.hasStoredKey(name) && (await this.game.unlockWithStoredKey(name))) {
+          if (!this.account.hasUser(name)) return t.echo(`login: utente "${name}" sconosciuto.`, 'err');
+          if (this.account.hasStoredKey(name) && (await this.account.unlockWithStoredKey(name))) {
             await t.echo('Credenziali memorizzate: verifica superata.', 'dim');
-            return this.afterLogin(name);
+            return this.welcome();
           }
           this.mode = { kind: 'password', user: name };
           this.updatePrompt();
@@ -169,14 +196,13 @@ export class Shell {
       },
       logout: {
         usage: 'logout',
-        help: 'chiude la sessione',
+        help: 'torna all’utente ospite (solo in questo terminale)',
         run: async () => {
-          if (this.game.user === GUEST) return t.echo('Nessuna sessione attiva.', 'dim');
-          const was = this.game.user;
-          this.game.logout();
-          this.state.user = GUEST;
-          this.state.cwd = '/';
-          this.game.store.save();
+          if (this.account.user === GUEST) return t.echo('Nessuna sessione attiva.', 'dim');
+          const was = this.account.user;
+          this.account.logout();
+          this.cwd = '/';
+          this.host.userChanged?.(this.account);
           await t.echo(`Sessione di ${was} chiusa. Utente corrente: ${GUEST}.`, 'dim');
         },
       },
@@ -184,46 +210,43 @@ export class Shell {
         usage: 'whoami',
         help: 'mostra utente e livello di accesso',
         run: () => {
-          const g = this.game;
-          const k = g.keyring;
+          const a = this.account;
+          const k = a.keyring;
           return t.echo([
-            { text: `Utente:  ${g.user}${k ? ` — ${k.nome}` : ''}` },
+            { text: `Utente:  ${a.user}${k ? ` — ${k.nome}` : ''}` },
             ...(k ? [{ text: `Ruolo:   ${k.ruolo}` }] : []),
-            { text: `Accesso: livello ${g.level} — ${g.levelLabel(g.level)}`, cls: 'hl' },
+            { text: `Accesso: livello ${a.level} — ${a.levelLabel(a.level)}`, cls: 'hl' },
           ]);
         },
       },
       ls: {
-        usage: 'ls [cartella]',
-        help: 'elenca i file',
+        usage: 'ls [-a] [cartella]',
+        help: 'elenca i file (-a: anche i nascosti)',
         complete: 'path',
-        run: ([arg]) => this.ls(arg),
+        run: (args) => this.ls(args.find((a) => !a.startsWith('-')), args.includes('-a')),
       },
       cd: {
         usage: 'cd <cartella>',
         help: 'cambia cartella',
         complete: 'path',
-        run: ([arg]) => {
-          const target = arg ? this.resolve(arg) : this.home;
-          const owner = this.foreignHome(target);
-          if (owner) return t.echo(`ACCESSO NEGATO — area personale di ${owner}`, 'err');
-          const tree = this.tree();
-          if (tree.file(target)) return t.echo(`cd: ${arg} non è una cartella`, 'err');
-          if (!tree.isDir(target)) return t.echo(`cd: ${arg}: cartella inesistente`, 'err');
-          this.state.cwd = target;
-          this.game.store.save();
-        },
+        run: ([arg]) => this.cd(arg),
       },
       pwd: {
         usage: 'pwd',
         help: 'mostra la cartella corrente',
-        run: () => t.echo(this.state.cwd),
+        run: () => t.echo(this.cwd),
       },
       cat: {
         usage: 'cat <file>',
         help: 'legge un file',
         complete: 'path',
         run: ([arg]) => (arg ? this.cat(arg) : t.echo('Uso: cat <file>', 'err')),
+      },
+      open: {
+        usage: 'open <file>',
+        help: 'apre un file o una cartella nelle app grafiche',
+        complete: 'path',
+        run: ([arg]) => this.open(arg),
       },
       search: {
         usage: 'search <parola>',
@@ -251,29 +274,26 @@ export class Shell {
         help: 'suoni di tastiera e ronzio',
         complete: ['on', 'off'],
         run: ([v]) => {
-          const on = v ? v.toLowerCase() === 'on' : !this.sound.enabled;
-          this.sound.setEnabled(on);
-          this.state.settings.audio = on;
-          this.game.store.save();
+          const on = v ? v.toLowerCase() === 'on' : !this.session.sound.enabled;
+          setAudio(this.session, on);
           return t.echo(`Audio ${on ? 'attivato' : 'disattivato'}.`, 'dim');
         },
       },
       tema: {
         usage: 'tema verde|ambra',
-        help: 'colore del fosforo',
+        help: 'colore del fosforo del terminale',
         complete: ['verde', 'ambra'],
         run: ([v]) => {
-          const theme: Theme = v?.toLowerCase() === 'ambra' ? 'ambra' : v?.toLowerCase() === 'verde' ? 'verde' : this.state.settings.theme === 'verde' ? 'ambra' : 'verde';
-          applyTheme(theme);
-          this.state.settings.theme = theme;
-          this.game.store.save();
+          const cur = this.state.settings.theme;
+          const theme: Theme = v?.toLowerCase() === 'ambra' ? 'ambra' : v?.toLowerCase() === 'verde' ? 'verde' : cur === 'verde' ? 'ambra' : 'verde';
+          setTheme(this.session, theme);
           return t.echo(`Fosforo ${theme}.`, 'dim');
         },
       },
       crediti: {
         usage: 'crediti',
         help: 'licenze e crediti',
-        run: () => t.print(this.game.manifest.meta.crediti.join('\n'), { cps: 2000 }),
+        run: () => t.print(this.session.manifest.meta.crediti.join('\n'), { cps: 2000 }),
       },
       reset: {
         usage: 'reset',
@@ -281,6 +301,14 @@ export class Shell {
         run: async () => {
           this.mode = { kind: 'confirm-reset' };
           await t.echo('Questa operazione cancella tutti i progressi. Digita RESET per confermare.', 'warn');
+        },
+      },
+      exit: {
+        usage: 'exit',
+        help: 'chiude il terminale',
+        run: () => {
+          if (this.host.exit) this.host.exit();
+          else return t.echo('Non puoi chiudere questo terminale.', 'dim');
         },
       },
     };
@@ -294,105 +322,140 @@ export class Shell {
       return;
     }
     await this.term.echo('Verifica credenziali…', 'dim');
-    const ok = await this.game.login(user, password);
-    if (!ok) {
-      this.sound.alert('sistema');
+    if (!(await this.account.login(user, password))) {
+      this.session.sound.alert('sistema');
       await this.term.echo('Autenticazione fallita.', 'err');
       this.updatePrompt();
       return;
     }
-    await this.afterLogin(user);
+    await this.welcome();
   }
 
-  private async afterLogin(user: string) {
-    const g = this.game;
-    const k = g.keyring!;
-    this.state.user = user;
-    this.state.cwd = g.homeOf(user);
-    if (!this.state.logins.includes(user)) this.state.logins.push(user);
-    g.store.save();
-    const mail = g.visibleMail();
-    const unread = mail.filter((m) => !this.state.mailRead.includes(`${user}/${m.id}`)).length;
+  private async welcome() {
+    const a = this.account;
+    const k = a.keyring!;
+    this.cwd = this.home;
+    this.session.recordLogin(a.user);
+    this.host.userChanged?.(a);
+    const mail = a.visibleMail();
+    const unread = this.session.unreadMail(a);
     this.updatePrompt();
     await this.term.print([
-      { text: `Accesso eseguito. Benvenuto/a, ${k.nome}.`, cls: 'ok' },
-      { text: `Livello di accesso ${k.livello} — ${g.levelLabel(k.livello)}`, cls: 'hl' },
+      { text: `Accesso eseguito in questo terminale. Benvenuto/a, ${k.nome}.`, cls: 'ok' },
+      { text: `Livello di accesso ${k.livello} — ${a.levelLabel(k.livello)}`, cls: 'hl' },
       { text: `Posta: ${mail.length} messaggi${unread ? `, ${unread} non letti` : ''}. Digita "mail".`, cls: 'dim' },
     ]);
-    this.events.check();
   }
 
   /* Files --------------------------------------------------------- */
 
-  private async ls(arg?: string) {
-    const t = this.term;
-    const dir = this.resolve(arg ?? '.');
-    const owner = this.foreignHome(dir);
-    if (owner) return t.echo(`ACCESSO NEGATO — area personale di ${owner}`, 'err');
-    const tree = this.tree();
-    const file = tree.file(dir);
-    const entries = file ? [{ name: dir.split('/').pop()!, dir: false, file, path: dir }] : tree.isDir(dir) ? tree.list(dir) : null;
-    if (!entries) return t.echo(`ls: ${arg}: file o cartella inesistente`, 'err');
-    if (!entries.length) return t.echo('(cartella vuota)', 'dim');
-    const lines: Line[] = entries.map((e) => {
-      if (e.dir) return { text: `${e.name}/`, cls: 'dir' };
-      const f = e.file!;
-      const name = e.name.padEnd(30);
-      if (!this.game.canRead(f)) return { text: `${name} [L${f.l}] accesso negato`, cls: 'locked' };
-      if (f.e && !this.game.isUnlocked(f)) return { text: `${name} [CIFRATO]`, cls: 'warn' };
-      return { text: `${name} ${formatSize(f.s)}${f.l ? `  [L${f.l}]` : ''}${f.e ? '  [decifrato]' : ''}` };
-    });
-    return t.echo(lines);
+  private nodeLine(n: VNode): Line {
+    const name = n.kind === 'dir' ? `${n.name}/` : n.name;
+    const padded = name.padEnd(30);
+    if (n.locked) return { text: `${padded} [L${n.level}] ${n.label ?? n.reason ?? 'accesso negato'}`, cls: 'locked' };
+    if (n.encrypted) return { text: `${padded} [CIFRATO]`, cls: 'warn' };
+    const info = [n.label, n.size !== undefined && n.kind !== 'dir' ? formatSize(n.size) : '', n.level ? `[L${n.level}]` : '']
+      .filter(Boolean)
+      .join('  ');
+    return { text: info ? `${padded} ${info}` : name, cls: n.kind === 'dir' ? 'dir' : undefined };
   }
 
-  private findFile(arg: string): { path: string; file?: FileEntry; error?: string } {
-    const path = this.resolve(arg);
-    const owner = this.foreignHome(path);
-    if (owner) return { path, error: `ACCESSO NEGATO — area personale di ${owner}` };
-    const tree = this.tree();
-    if (tree.isDir(path)) return { path, error: `${arg}: è una cartella` };
-    const file = tree.file(path);
-    if (!file) return { path, error: `${arg}: file inesistente` };
-    return { path, file };
+  private async ls(arg: string | undefined, all: boolean) {
+    const t = this.term;
+    const path = this.resolve(arg ?? '.');
+    const node = await this.slow(this.fs.stat(path, this.account));
+    if (!node) return t.echo(`ls: ${arg ?? path}: file o cartella inesistente`, 'err');
+    if (node.kind !== 'dir') return t.echo([this.nodeLine(node)]);
+    if (node.locked) return t.echo(`ACCESSO NEGATO — ${node.reason}`, 'err');
+    let res;
+    try {
+      res = await this.slow(this.fs.list(path, this.account));
+    } catch {
+      return t.echo('Connessione all’archivio centrale fallita. Riprova.', 'err');
+    }
+    const hidden = res.entries.filter((e) => e.hidden).length;
+    const entries = all ? res.entries : res.entries.filter((e) => !e.hidden);
+    if (!entries.length) return t.echo(hidden ? `(nessun file visibile — ${hidden} nascosti, usa ls -a)` : '(cartella vuota)', 'dim');
+    return t.echo(entries.map((e) => this.nodeLine(e)));
+  }
+
+  private async cd(arg?: string) {
+    const t = this.term;
+    const target = arg ? this.resolve(arg) : this.home;
+    const node = await this.slow(this.fs.stat(target, this.account));
+    if (!node) return t.echo(`cd: ${arg}: cartella inesistente`, 'err');
+    if (node.kind !== 'dir') return t.echo(`cd: ${arg} non è una cartella`, 'err');
+    if (node.locked) return t.echo(`ACCESSO NEGATO — ${node.reason}`, 'err');
+    this.cwd = node.path;
   }
 
   private async cat(arg: string) {
     const t = this.term;
-    const { file, error } = this.findFile(arg);
-    if (!file) return t.echo(error!, 'err');
-    const res = await this.game.read(file);
-    if (res.status === 'denied') {
-      this.sound.alert('sistema');
-      return t.echo(`ACCESSO NEGATO — Livello ${res.level} richiesto`, 'err');
+    const path = this.resolve(arg);
+    let res: ReadResult;
+    try {
+      res = await this.slow(this.fs.read(path, this.account));
+    } catch {
+      return t.echo('Connessione all’archivio centrale fallita. Riprova.', 'err');
     }
-    if (res.status === 'encrypted') {
-      return t.echo([
-        { text: noise(4), cls: 'dim' },
-        { text: `${file.p}: file cifrato. Usa: decrypt ${arg} <chiave>`, cls: 'warn' },
-      ]);
+    if (!res.ok) {
+      if (res.reason === 'denied') this.session.sound.alert('sistema');
+      if (res.reason === 'encrypted') return t.echo([{ text: noise(4), cls: 'dim' }, { text: res.message, cls: 'warn' }]);
+      return t.echo(res.message, 'err');
     }
-    await t.print([{ text: `── ${file.p} ${'─'.repeat(Math.max(4, 44 - file.p.length))}`, cls: 'dim' }, ...formatDoc(res.text)]);
-    if (!this.state.read.includes(file.p)) {
-      this.state.read.push(file.p);
-      this.game.store.save();
+    const header: Line = { text: `── ${path} ${'─'.repeat(Math.max(4, 44 - path.length))}`, cls: 'dim' };
+    if (res.kind === 'text') return t.print([header, ...formatDoc(res.text)]);
+    if (res.kind === 'image') {
+      await t.echo([header]);
+      await t.printImage(res.src, res.caption);
+      if (res.meta?.licence) await t.echo(res.meta.licence, 'dim');
+      return;
     }
-    this.events.check();
+    const m = res.meta;
+    await t.print(
+      [
+        header,
+        { text: m.title, cls: 'h' },
+        ...(m.classLabel ? [{ text: `Classe: ${m.classLabel} · Livello di accesso ${m.level ?? '?'}`, cls: 'dim' }] : []),
+        { text: '' },
+        ...formatDoc(res.text),
+        { text: '' },
+        ...(m.licence ? [{ text: m.licence, cls: 'dim' }] : []),
+        ...(m.related?.length ? [{ text: `Nella cartella: ${m.related.map((r) => r.name).join(', ')}`, cls: 'dim' }] : []),
+        { text: `Per la versione grafica: open "${basename(path)}"`, cls: 'dim' },
+      ],
+      { cps: 1500 },
+    );
+  }
+
+  private async open(arg?: string) {
+    const t = this.term;
+    if (!arg) return t.echo('Uso: open <file o cartella>', 'err');
+    if (!this.host.open) return t.echo('Nessuna interfaccia grafica disponibile.', 'err');
+    const path = this.resolve(arg);
+    const node = await this.slow(this.fs.stat(path, this.account));
+    if (!node) return t.echo(`open: ${arg}: file inesistente`, 'err');
+    if (node.locked) return t.echo(`ACCESSO NEGATO — ${node.reason}`, 'err');
+    this.host.open(path, this.account);
+    return t.echo(`Aperto in ${node.kind === 'dir' ? 'Esplora risorse' : node.kind === 'image' ? 'Visualizzatore immagini' : 'Visualizzatore documenti'}.`, 'dim');
   }
 
   private async decrypt(arg: string | undefined, key: string) {
     const t = this.term;
     if (!arg || !key) return t.echo('Uso: decrypt <file> <chiave>', 'err');
-    const { file, error } = this.findFile(arg);
-    if (!file) return t.echo(error!, 'err');
-    if (!this.game.canRead(file)) return t.echo(`ACCESSO NEGATO — Livello ${file.l} richiesto`, 'err');
+    const path = this.resolve(arg);
+    const file = this.session.gameFs.entry(path, this.account);
+    if (!file) return t.echo(`decrypt: ${arg}: file inesistente o non decifrabile`, 'err');
+    if (!this.account.canRead(file)) return t.echo(`ACCESSO NEGATO — Livello ${file.l} richiesto`, 'err');
     if (!file.e) return t.echo(`${arg}: il file non è cifrato.`, 'dim');
-    if (this.game.isUnlocked(file)) return t.echo(`${arg}: già decifrato. Usa: cat ${arg}`, 'dim');
+    if (this.account.isUnlocked(file)) return t.echo(`${arg}: già decifrato. Usa: cat ${arg}`, 'dim');
     await t.print('Decifratura in corso ▒▒▒▒▒▒▒▒▒▒', { cls: 'dim', cps: 40 });
-    if (await this.game.decrypt(file, key)) {
+    if (await this.account.decrypt(file, key)) {
       await t.echo(`Decifratura riuscita. Usa: cat ${arg}`, 'ok');
-      this.events.check();
+      this.session.notify();
+      this.session.events.check();
     } else {
-      this.sound.alert('sistema');
+      this.session.sound.alert('sistema');
       await t.echo('Chiave non valida.', 'err');
     }
   }
@@ -411,33 +474,29 @@ export class Shell {
         hits.push({ text: `${where}:${i + 1}  ${snippet}` });
       });
     };
-    for (const f of this.tree().allFiles()) {
+    const acc = this.account;
+    for (const f of acc.allFiles()) {
       if (f.p.toLowerCase().includes(q)) hits.push({ text: `${f.p}  (nome del file)`, cls: 'dim' });
-      if (!this.game.canRead(f) || !this.game.isUnlocked(f)) continue;
-      const res = await this.game.read(f);
+      if (!acc.canRead(f) || !acc.isUnlocked(f)) continue;
+      const res = await acc.read(f);
       if (res.status === 'ok') add(f.p, res.text);
     }
-    for (const [i, m] of this.game.visibleMail().entries()) {
-      add(`mail ${i + 1}`, `${m.oggetto}\n${await this.game.readMail(m)}`);
-    }
+    for (const [i, m] of acc.visibleMail().entries()) add(`mail ${i + 1}`, `${m.oggetto}\n${await acc.readMail(m)}`);
     if (!hits.length) return t.echo(`Nessun risultato per "${query}" nei file accessibili.`, 'dim');
     const shown = hits.slice(0, 20);
-    return t.echo([
-      ...shown,
-      { text: `${hits.length} risultat${hits.length === 1 ? 'o' : 'i'}${hits.length > shown.length ? ` (mostrati ${shown.length})` : ''}.`, cls: 'dim' },
-    ]);
+    return t.echo([...shown, { text: `${hits.length} risultat${hits.length === 1 ? 'o' : 'i'}${hits.length > shown.length ? ` (mostrati ${shown.length})` : ''}.`, cls: 'dim' }]);
   }
 
   private async mail(n?: string) {
     const t = this.term;
-    const g = this.game;
-    if (g.user === GUEST) return t.echo('L’utente ospite non ha una casella di posta. Effettua il login.', 'err');
-    const list = g.visibleMail();
+    const a = this.account;
+    if (a.user === GUEST) return t.echo('L’utente ospite non ha una casella di posta. Effettua il login.', 'err');
+    const list = a.visibleMail();
     if (!list.length) return t.echo('Nessun messaggio.', 'dim');
     if (!n) {
       const lines: Line[] = [{ text: `  #  ${'DATA'.padEnd(17)} ${'DA'.padEnd(14)} OGGETTO`, cls: 'dim' }];
       list.forEach((m, i) => {
-        const unread = !this.state.mailRead.includes(`${g.user}/${m.id}`);
+        const unread = !this.state.mailRead.includes(`${a.user}/${m.id}`);
         lines.push({ text: `${unread ? '*' : ' '}${String(i + 1).padStart(2)}  ${m.data.padEnd(17)} ${m.da.padEnd(14)} ${m.oggetto}`, cls: unread ? 'hl' : undefined });
       });
       lines.push({ text: 'Usa "mail <numero>" per leggere. * = non letto', cls: 'dim' });
@@ -445,7 +504,7 @@ export class Shell {
     }
     const m = list[Number(n) - 1];
     if (!m) return t.echo(`mail: messaggio ${n} inesistente`, 'err');
-    const body = await g.readMail(m);
+    const body = await a.readMail(m);
     await t.print([
       { text: `Da:      ${m.da}`, cls: 'hl' },
       { text: `A:       ${m.a}` },
@@ -454,73 +513,25 @@ export class Shell {
       { text: '─'.repeat(48), cls: 'dim' },
       ...formatDoc(body),
     ]);
-    const id = `${g.user}/${m.id}`;
-    if (!this.state.mailRead.includes(id)) {
-      this.state.mailRead.push(id);
-      g.store.save();
-    }
-  }
-
-  /* Events -------------------------------------------------------- */
-
-  private async showEvent(ev: EventEntry, payload: EventPayload) {
-    const t = this.term;
-    const text = await this.game.renderBody(payload.testo);
-    switch (ev.tipo) {
-      case 'sistema':
-        this.sound.alert('sistema');
-        await t.print(text ? `[SISTEMA] ${text}` : '', { cls: 'sys' });
-        break;
-      case 'glitch':
-        this.sound.alert('intruso');
-        await t.glitch(1200);
-        if (text) await t.print(text, { cls: 'intr', cps: SPEED.slow });
-        break;
-      case 'intruso':
-        this.sound.alert('intruso');
-        await t.glitch(500);
-        await t.print(`>> connessione in ingresso · ${payload.da ?? '???'} · linea interna 4`, { cls: 'intr-head', cps: Infinity });
-        await t.print(text, { cls: 'intr', cps: SPEED.slow });
-        break;
-      case 'finale': {
-        this.sound.alert('intruso');
-        await t.glitch(1600);
-        await t.print(text, { cls: 'final', cps: 160 });
-        const minutes = Math.max(1, Math.round((Date.now() - this.state.startedAt) / 60000));
-        await t.print(
-          [
-            { text: '' },
-            { text: '════════════════  FINE  ════════════════', cls: 'h' },
-            { text: `Documenti letti: ${this.state.read.length} · tempo: ${minutes} min`, cls: 'dim' },
-            { text: 'Digita "reset" per ricominciare.', cls: 'dim' },
-          ],
-          { cps: 300 },
-        );
-        break;
-      }
-    }
-    this.updatePrompt();
+    this.session.markMailRead(a.user, m.id);
   }
 
   /* Completion ---------------------------------------------------- */
 
   private complete(value: string): { value?: string; options?: string[] } {
     if (this.mode.kind !== 'command') return {};
-    const endsWithSpace = /\s$/.test(value);
-    const parts = value.trimStart().split(/\s+/);
-    if (parts.length === 1 && !endsWithSpace) {
-      const names = ORDER.filter((c) => c.startsWith(parts[0].toLowerCase()));
-      return pick(parts[0], names, (n) => `${n} `, (prefix) => prefix);
+    const { start, text: current, index } = lastToken(value);
+    const head = value.slice(0, start);
+    if (index === 0) {
+      const names = ORDER.filter((c) => c.startsWith(current.toLowerCase()));
+      return pick(current, names, (n) => `${n} `, (p) => p);
     }
-    const cmd = this.commands[parts[0].toLowerCase()];
+    const cmdName = tokenize(value)[0]?.toLowerCase();
+    const cmd = this.commands[cmdName];
     if (!cmd?.complete) return {};
-    const current = endsWithSpace ? '' : parts[parts.length - 1];
-    const head = value.slice(0, value.length - current.length);
-    // decrypt completes only the file (2nd word)
-    if (parts[0] === 'decrypt' && parts.length - (endsWithSpace ? 0 : 1) > 1) return {};
-
+    if (cmdName === 'decrypt' && index > 1) return {};
     if (cmd.complete === 'user') {
-      const users = this.game.users.filter((u) => u.startsWith(current.toLowerCase()));
+      const users = this.account.users.filter((u) => u.startsWith(current.toLowerCase()));
       return pick(current, users, (u) => `${head}${u} `, (p) => head + p);
     }
     if (Array.isArray(cmd.complete)) {
@@ -531,20 +542,88 @@ export class Shell {
     const dirPart = slash >= 0 ? current.slice(0, slash + 1) : '';
     const base = slash >= 0 ? current.slice(slash + 1) : current;
     const dir = this.resolve(dirPart || '.');
-    const tree = this.tree();
-    if (!tree.isDir(dir) || this.foreignHome(dir)) return {};
-    const entries = tree.list(dir).filter((e) => e.name.toLowerCase().startsWith(base.toLowerCase()));
-    const names = entries.map((e) => (e.dir ? `${e.name}/` : e.name));
+    let names = this.fs.names(dir, this.account);
+    if (!base.startsWith('.')) names = names.filter((n) => !n.startsWith('.'));
+    names = names.filter((n) => n.toLowerCase().startsWith(base.toLowerCase()));
     return pick(
       base,
       names,
-      (n) => `${head}${dirPart}${n}${n.endsWith('/') ? '' : ' '}`,
-      (p) => `${head}${dirPart}${p}`,
+      (n) => `${head}${escapeArg(dirPart + n)}${n.endsWith('/') ? '' : ' '}`,
+      (p) => `${head}${escapeArg(dirPart + p)}`,
     );
   }
 }
 
 /* Helpers ---------------------------------------------------------- */
+
+/** Splits a command line, honouring "quotes", 'quotes' and backslash escapes. */
+export function tokenize(line: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  let quote: string | null = null;
+  let has = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (quote) {
+      if (c === quote) quote = null;
+      else cur += c;
+    } else if (c === '"' || c === "'") {
+      quote = c;
+      has = true;
+    } else if (c === '\\' && i + 1 < line.length) {
+      cur += line[++i];
+      has = true;
+    } else if (/\s/.test(c)) {
+      if (has || cur) out.push(cur);
+      cur = '';
+      has = false;
+    } else {
+      cur += c;
+      has = true;
+    }
+  }
+  if (has || cur) out.push(cur);
+  return out;
+}
+
+/** The token being typed at the end of the line (for completion). */
+function lastToken(line: string): { start: number; text: string; index: number } {
+  let start = 0;
+  let index = 0;
+  let quote: string | null = null;
+  let inToken = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (quote) {
+      if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '\\') {
+      if (!inToken) {
+        inToken = true;
+        start = i;
+      }
+      i++;
+      continue;
+    }
+    if (/\s/.test(c)) {
+      if (inToken) index++;
+      inToken = false;
+      continue;
+    }
+    if (!inToken) {
+      inToken = true;
+      start = i;
+    }
+    if (c === '"' || c === "'") quote = c;
+  }
+  if (!inToken) return { start: line.length, text: '', index };
+  return { start, text: tokenize(line.slice(start))[0] ?? '', index };
+}
+
+function escapeArg(s: string) {
+  return s.replace(/([\s"'\\])/g, '\\$1');
+}
 
 function pick(
   typed: string,
@@ -559,17 +638,26 @@ function pick(
     while (!o.toLowerCase().startsWith(prefix.toLowerCase())) prefix = prefix.slice(0, -1);
   }
   if (prefix.length > typed.length) return { value: partial(prefix) };
-  return { options };
+  return { options: options.length > 60 ? [...options.slice(0, 60), `… (${options.length - 60} altri)`] : options };
 }
 
-export function applyTheme(theme: Theme) {
+export function setTheme(session: Session, theme: Theme) {
   document.documentElement.dataset.phosphor = theme;
+  session.state.settings.theme = theme;
+  session.store.save();
   try {
-    // Read by the inline script in index.html to avoid a colour flash on load.
     localStorage.setItem('terminale:tema', theme);
   } catch {
     /* ignore */
   }
+  session.notify();
+}
+
+export function setAudio(session: Session, on: boolean) {
+  session.sound.setEnabled(on);
+  session.state.settings.audio = on;
+  session.store.save();
+  session.notify();
 }
 
 function formatSize(chars: number) {
@@ -583,7 +671,7 @@ function noise(lines: number) {
   ).join('\n');
 }
 
-/** Light markup for documents: # titles, > quotes, --- rules. */
+/** Light markup for documents: # titles, ## subtitles, > quotes, --- rules. */
 export function formatDoc(text: string): Line[] {
   return text.split('\n').map((line) => {
     if (/^#\s/.test(line)) return { text: line.replace(/^#\s+/, '').toUpperCase(), cls: 'h' };

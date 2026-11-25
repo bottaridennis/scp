@@ -27,6 +27,7 @@ export class Game {
   user = GUEST;
   keyring: Keyring | null = null;
   private levelKeys = new Map<number, CryptoKey>();
+  /** Imported `decrypt` keys, shared through the store by every account. */
   private fileKeys = new Map<string, CryptoKey>();
   private segmentCache = new Map<string, string>();
 
@@ -39,26 +40,6 @@ export class Game {
     const res = await fetch(url, { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as Manifest;
-  }
-
-  /** Restores the saved session; silently drops keys that no longer work (content rebuilt). */
-  async restore() {
-    const s = this.store.state;
-    for (const [path, b64] of Object.entries(s.fileKeys)) {
-      try {
-        this.fileKeys.set(path, await importRawKey(fromB64(b64)));
-      } catch {
-        delete s.fileKeys[path];
-      }
-    }
-    if (s.user !== GUEST) {
-      const ok = await this.unlockWithStoredKey(s.user);
-      if (!ok) {
-        s.user = GUEST;
-        s.cwd = '/';
-      }
-    }
-    this.store.save();
   }
 
   get level(): number {
@@ -148,22 +129,34 @@ export class Game {
   }
 
   isUnlocked(entry: FileEntry) {
-    return !entry.e || this.fileKeys.has(entry.p);
+    return !entry.e || Boolean(this.store.state.fileKeys[entry.p]);
   }
 
-  private keyForLayer(entry: { l: number; e?: boolean; p?: string }, depth: number): CryptoKey | null {
+  /** Imports (once) a `decrypt` key saved by any account. */
+  private async fileKey(path: string): Promise<CryptoKey | null> {
+    const b64 = this.store.state.fileKeys[path];
+    if (!b64) return null;
+    let key = this.fileKeys.get(path);
+    if (!key) {
+      key = await importRawKey(fromB64(b64));
+      this.fileKeys.set(path, key);
+    }
+    return key;
+  }
+
+  private async keyForLayer(entry: { l: number; e?: boolean; p?: string }, depth: number): Promise<CryptoKey | null> {
     const layers: ('level' | 'file')[] = [];
     if (entry.l >= 1) layers.push('level');
     if (entry.e) layers.push('file');
     const kind = layers[depth];
     if (kind === 'level') return this.level >= entry.l ? (this.levelKeys.get(entry.l) ?? null) : null;
-    if (kind === 'file') return (entry.p && this.fileKeys.get(entry.p)) || null;
+    if (kind === 'file') return entry.p ? this.fileKey(entry.p) : null;
     return null;
   }
 
   async read(entry: FileEntry): Promise<ReadResult> {
     if (!this.canRead(entry)) return { status: 'denied', level: entry.l };
-    if (entry.e && !this.fileKeys.has(entry.p)) return { status: 'encrypted' };
+    if (entry.e && !this.isUnlocked(entry)) return { status: 'encrypted' };
     try {
       const res = await open<DocBody>(entry.b, (d) => this.keyForLayer(entry, d));
       if ('lockedAt' in res) return entry.e ? { status: 'encrypted' } : { status: 'denied', level: entry.l };
