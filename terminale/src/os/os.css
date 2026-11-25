@@ -144,6 +144,8 @@ button { font: inherit; color: inherit; }
 .desk-icon {
   position: relative;
   width: 84px;
+  height: 86px;
+  overflow: hidden;
   padding: 6px 4px;
   border: 1px solid transparent;
   background: transparent;
@@ -660,5 +662,22 @@ button { font: inherit; color: inherit; }
 .br-page p, .br-page li, .br-page td { overflow-wrap: anywhere; }
 .radio-listen { align-self: flex-start; margin-bottom: 8px; font-family: var(--ui-font); font-size: 12px; }
 .voice-listen { margin: 6px 0 4px; font-size: 12px; }
-.desk-icons-sep { width: 84px; height: 1px; margin: 4px 0; }
+.desk-icons-sep { display: none; }
 .desk-icon.is-file .desk-icon-label { overflow-wrap: anywhere; font-size: 12px; }
+
+/* Taccuino */
+.notebook { flex: 1; min-height: 0; overflow: auto; padding: 14px 18px; background: #f3ead0 repeating-linear-gradient(#f3ead0 0 27px, #d9cfa8 27px 28px); font: 14px/28px "Courier New", Courier, monospace; color: #2b2418; }
+.notebook h3 { margin: 0 0 4px; font: bold 13px var(--ui-font); letter-spacing: 0.08em; text-transform: uppercase; color: #7a1f1f; }
+.nb-goal { padding-bottom: 10px; margin-bottom: 10px; border-bottom: 2px solid #7a1f1f; }
+.nb-goal-title { margin: 0 0 6px; font-weight: bold; }
+.nb-hint { margin: 0 0 6px; }
+.nb-goal .btn { margin-top: 4px; font: 12px var(--ui-font); }
+.nb-note { margin: 0 0 8px; }
+.nb-note.is-new::before { content: "NUOVO "; color: #7a1f1f; font-weight: bold; }
+
+/* Free icon placement */
+.desk-icons.is-free { display: block; right: 8px; }
+.desk-icons.is-free .desk-icon { position: absolute; }
+.desk-icons.is-free .desk-icons-sep { display: none; }
+.desk-icon { touch-action: none; }
+.desk-icon.is-dragging { z-index: 5; opacity: 0.85; border: 1px dotted rgb(255 255 255 / 0.8); cursor: grabbing; }

@@ -33,7 +33,7 @@ export type ShellHost = {
 };
 
 const ORDER = [
-  'help', 'incarico', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'stat', 'open', 'search', 'decrypt',
+  'help', 'aiuto', 'taccuino', 'incarico', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'stat', 'open', 'search', 'decrypt',
   'ripara', 'unisci', 'mail', 'rispondi', 'rete', 'connetti', 'radio', 'voci', 'telecamere',
   'clear', 'audio', 'tema', 'salto', 'crediti', 'reset', 'exit',
 ];
@@ -325,6 +325,37 @@ export class Shell {
         usage: 'crediti',
         help: 'licenze e crediti',
         run: () => t.print(this.session.manifest.meta.crediti.join('\n'), { cps: 2000 }),
+      },
+      aiuto: {
+        usage: 'aiuto',
+        help: 'obiettivo attuale e un suggerimento in più (fino a 3)',
+        run: async () => {
+          const o = this.session.currentObjective();
+          if (!o) return t.echo('Nessun obiettivo in corso.', 'dim');
+          const p = await this.session.openNotebook(o);
+          if (!p) return t.echo('Obiettivo cifrato: serve un livello di accesso più alto.', 'warn');
+          const already = this.state.hints[o.id] ?? 0;
+          const n = already >= p.aiuti.length ? already : this.session.nextHint(o);
+          const lines: Line[] = [{ text: `OBIETTIVO — ${p.titolo}`, cls: 'h' }];
+          p.aiuti.slice(0, n).forEach((h, i) => lines.push({ text: `Aiuto ${i + 1}: ${h}`, cls: i === n - 1 ? 'hl' : 'dim' }));
+          if (n < p.aiuti.length) lines.push({ text: `(digita di nuovo «aiuto» per un suggerimento più preciso: ${n}/${p.aiuti.length})`, cls: 'dim' });
+          return t.print(lines, { cps: 400 });
+        },
+      },
+      taccuino: {
+        usage: 'taccuino',
+        help: 'gli appunti presi finora (anche nell’app Taccuino)',
+        run: async () => {
+          const notes = this.session.notes();
+          if (!notes.length) return t.echo('Taccuino vuoto: annoto da solo quello che scopro leggendo i documenti.', 'dim');
+          const lines: Line[] = [{ text: 'TACCUINO', cls: 'h' }];
+          for (const n of notes) {
+            const p = await this.session.openNotebook(n);
+            if (p) lines.push({ text: `• ${p.testo}` });
+          }
+          this.session.markNotesSeen();
+          return t.print(lines, { cps: 2000 });
+        },
       },
       // Easter egg (not listed in help): a tribute to a horror storyteller.
       amicodiverte: {

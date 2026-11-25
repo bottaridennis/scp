@@ -115,6 +115,7 @@ export type Manifest = {
   voci: VoiceEntry[];
   camere: CameraEntry[];
   web: WebEntry[];
+  taccuino: { o: ObjectiveEntry[]; n: NoteEntry[] };
   /** Per-level check values used to validate keys restored from localStorage. */
   check: Record<string, Envelope>;
   /** Users and their keyrings, each sealed with PBKDF2(password). */
@@ -161,6 +162,16 @@ export type VoiceEntry = {
   cond: { lettura?: string; evento?: string };
   b: Sealed<VoicePayload>;
 };
+
+/** Progress condition: a file read, a login, an event fired (all that are set must hold). */
+export type Cond = { lettura?: string; login?: string; evento?: string };
+
+export type ObjectivePayload = { titolo: string; aiuti: string[] };
+/** Notebook objective: shown from `start` until `end` holds. */
+export type ObjectiveEntry = { id: string; l: number; start?: Cond; end: Cond; b: Sealed<ObjectivePayload> };
+export type NotePayload = { testo: string };
+/** Notebook note, written by the technician when `cond` holds. */
+export type NoteEntry = { id: string; l: number; cond: Cond; b: Sealed<NotePayload> };
 
 export type WebPayload = { titolo: string; testo: DocBody };
 export type WebEntry = {
