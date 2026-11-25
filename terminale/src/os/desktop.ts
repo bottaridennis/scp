@@ -9,6 +9,8 @@ import { h, icon, isTouch } from './dom.ts';
 import { ICONS } from './icons.ts';
 import { ProfileStore, type Profile, type SavedWindow } from './profile.ts';
 import { WindowManager, type Win } from './wm.ts';
+import { nodeIcon } from './apps/explorer.ts';
+import type { VNode } from '../engine/vfs.ts';
 
 export type AppContext = { session: Session; desktop: Desktop; win: Win };
 
@@ -222,9 +224,45 @@ export class Desktop {
 
   /* UI ------------------------------------------------------------ */
 
+  private iconsToken = 0;
+
+  /** The user's own files on the desktop: the home folder (the guest: the root), hidden files excluded. */
+  private async deskFiles(): Promise<VNode[]> {
+    const acc = this.account;
+    const dir = acc.user === GUEST ? '/' : acc.homeOf(acc.user);
+    try {
+      const { entries } = await this.session.fs.list(dir, acc);
+      return entries.filter((n) => !n.hidden && n.kind !== 'dir');
+    } catch {
+      return [];
+    }
+  }
+
+  private fileIcon(node: VNode) {
+    const el = h(
+      'button',
+      { type: 'button', class: 'desk-icon is-file', title: node.path },
+      h('span', { class: 'desk-icon-img', html: nodeIcon(node) }),
+      h('span', { class: 'desk-icon-label' }, node.name),
+    );
+    const open = () => this.openPath(node.path);
+    el.addEventListener(isTouch() ? 'click' : 'dblclick', open);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') open();
+    });
+    return el;
+  }
+
   private renderIcons() {
-    this.iconsEl.replaceChildren(
-      ...this.appsWith((a) => Boolean(a.desktop)).map((app) => {
+    const my = ++this.iconsToken;
+    void this.deskFiles().then((files) => {
+      if (my !== this.iconsToken) return;
+      this.iconsEl.replaceChildren(...this.appIcons(), ...(files.length ? [h('div', { class: 'desk-icons-sep', 'aria-hidden': 'true' }), ...files.map((f) => this.fileIcon(f))] : []));
+    });
+  }
+
+  private appIcons() {
+    return this.appsWith((a) => Boolean(a.desktop)).map((app) => {
         const badge = app.badge?.(this.session);
         const el = h(
           'button',
@@ -239,8 +277,7 @@ export class Desktop {
           if (e.key === 'Enter') void this.open(app.id);
         });
         return el;
-      }),
-    );
+      });
   }
 
   private renderTasks() {
