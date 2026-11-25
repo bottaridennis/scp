@@ -639,14 +639,22 @@ button { font: inherit; color: inherit; }
 .br-bookmark .ico { width: 24px; height: 24px; }
 .br-bookmark span { display: flex; flex-direction: column; min-width: 0; }
 .br-bookmark small { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.br-yt-head p { margin: 0 0 12px; color: var(--muted); }
-.br-frame { width: 100%; aspect-ratio: 16 / 9; border: 0; display: block; background: #000; }
 .br-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
-.br-actions .btn { text-decoration: none; padding: 4px 12px; }
-.br-watching { color: #8a1f1f; min-height: 1em; }
+.br-actions .btn { text-decoration: none; padding: 4px 12px; color: inherit; }
 .br-error code { background: #f1f1ee; padding: 1px 4px; }
 @media (max-width: 640px) {
   .pod { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .pod-list { max-height: 160px; }
   .br-page { padding: 12px; }
 }
+.br-page h3 { margin: 18px 0 8px; font-size: 15px; }
+.br-page ul, .br-page ol { padding-left: 22px; }
+.br-page li { margin: 3px 0; }
+.br-link { color: #1f4f9a; }
+.br-link:visited { color: #5b2d8a; }
+.br-table { border-collapse: collapse; margin: 8px 0 14px; width: 100%; }
+.br-table th, .br-table td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; vertical-align: top; }
+.br-table th { background: #f1f1ee; }
+.br-gap { height: 3em; }
+.br-narrator h2 { color: #7a1f1f; }
+.br-page p, .br-page li, .br-page td { overflow-wrap: anywhere; }

@@ -107,6 +107,7 @@ export type Manifest = {
   radio: RadioEntry[];
   voci: VoiceEntry[];
   camere: CameraEntry[];
+  web: WebEntry[];
   /** Per-level check values used to validate keys restored from localStorage. */
   check: Record<string, Envelope>;
   /** Users and their keyrings, each sealed with PBKDF2(password). */
@@ -146,6 +147,18 @@ export type VoiceEntry = {
   l: number;
   cond: { lettura?: string; evento?: string };
   b: Sealed<VoicePayload>;
+};
+
+export type WebPayload = { titolo: string; testo: DocBody };
+export type WebEntry = {
+  /** Normalised address, e.g. "intranet.sito47/turni". */
+  u: string;
+  l: number;
+  /** Only reachable after this event. */
+  v?: string;
+  /** Bookmark label on the browser's start page, if any. */
+  s?: { t: string; n: string };
+  b: Sealed<WebPayload>;
 };
 
 export type CameraPayload = { messaggi: string[] };
