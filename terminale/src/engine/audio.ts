@@ -22,6 +22,7 @@ export class Sound {
     else {
       this.stopHum();
       this.stopVoice();
+      this.radioStatic(null);
     }
   }
 
@@ -31,6 +32,42 @@ export class Sound {
    */
   voice(file: string, force = false): HTMLAudioElement | null {
     return this.play(`${import.meta.env.BASE_URL}audio/${file}`, force);
+  }
+
+  private staticNode: { gain: GainNode; stop: () => void } | null = null;
+
+  /**
+   * Short-wave static for the radio: `strength` 0 = pure noise, 1 = station locked (silent).
+   * Pass null to stop it. Only audible with sounds on.
+   */
+  radioStatic(strength: number | null) {
+    if (strength === null || !this.enabled) {
+      this.staticNode?.stop();
+      this.staticNode = null;
+      return;
+    }
+    const ctx = this.context();
+    if (!ctx) return;
+    if (!this.staticNode) {
+      const len = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      const band = ctx.createBiquadFilter();
+      band.type = 'bandpass';
+      band.frequency.value = 1400;
+      band.Q.value = 0.6;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      src.connect(band).connect(gain).connect(ctx.destination);
+      src.start();
+      this.staticNode = { gain, stop: () => src.stop() };
+    }
+    const target = 0.12 * (1 - Math.max(0, Math.min(1, strength)));
+    this.staticNode.gain.gain.setTargetAtTime(target, ctx.currentTime, 0.05);
   }
 
   /** Plays any audio URL (e.g. a decrypted recording) with the same rules as `voice`. */

@@ -11,7 +11,7 @@ Classificazione: civile · Minaccia diretta: nessuna · Stato: [[L2: SOTTO OSSER
 Narratore italiano di racconti dell'orrore. Scrive le storie da sé e le legge ad alta
 voce ogni settimana su più piattaforme (video, podcast, dirette).
 Pubblico stimato: decine di migliaia di ascoltatori.
-Si presenta come «un amico che diverte».
+Si presenta come «Amicodiverte».
 
 Nessuna anomalia rilevata nel soggetto. Le sue storie sono, per quanto ci risulta,
 inventate.

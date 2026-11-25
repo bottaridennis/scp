@@ -6,10 +6,44 @@ import { ICONS } from '../icons.ts';
 
 const handles = new WeakMap<object, (path: string) => void>();
 
+/** A line of running prose (not a table, list, log entry, ASCII drawing or indented block). */
+function isProse(line: string): boolean {
+  if (!line.trim() || /^\s/.test(line)) return false;
+  if (/^(#|[-*•]\s|\d+[.)]\s|\||—|–)/.test(line)) return false;
+  if (/^\d{1,2}[:.]\d{2}/.test(line) || /^\d{2}\/\d{2}/.test(line)) return false; // log times and dates
+  if (/[│┌┐└┘├┤┬┴┼─═║╔╗╚╝▒]/.test(line)) return false;
+  if (/\S {3,}\S/.test(line) || (line.match(/\S {2}\S/g)?.length ?? 0) >= 2) return false; // columns
+  return true;
+}
+
+/**
+ * The texts are hard-wrapped at ~70 columns; in a narrower window every long line would wrap
+ * again and leave ragged lines. Joins the lines of the same paragraph (quotes included) so the
+ * browser can wrap them, and leaves everything else exactly as written.
+ */
+export function unwrapText(text: string): string {
+  const out: string[] = [];
+  for (const line of text.split('\n')) {
+    const prev = out[out.length - 1];
+    if (prev !== undefined) {
+      const quote = /^>\s?/.test(prev) && /^>\s?\S/.test(line);
+      const a = quote ? prev.replace(/^>\s?/, '') : prev;
+      const b = quote ? line.replace(/^>\s?/, '') : line;
+      const speaker = /^[A-ZÀ-Ý0-9][A-ZÀ-Ý0-9 .'’-]{1,24}:\s/.test(b);
+      if ([...a].length >= 50 && isProse(a) && isProse(b) && !speaker && !/^\[/.test(b)) {
+        out[out.length - 1] = `${prev} ${b}`;
+        continue;
+      }
+    }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
 /** Game documents: keeps the typewriter layout, styles titles and redactions. */
 export function typedText(text: string): HTMLElement {
   const pre = h('pre', { class: 'doc-text' });
-  for (const line of text.split('\n')) {
+  for (const line of unwrapText(text).split('\n')) {
     const heading = /^#{1,2}\s/.test(line);
     const row = h('span', { class: heading ? 'doc-h' : /^>\s?/.test(line) ? 'doc-q' : '' });
     const body = line.replace(/^#{1,2}\s+/, '').replace(/^>\s?/, '');

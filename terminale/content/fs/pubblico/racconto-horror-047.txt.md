@@ -21,4 +21,4 @@ frase. E una voce, la stessa voce, quella che conosci da anni, dice:
 Se lavori qui, fammi un favore: la notte, dalle nove in poi, metti la radio sui
 4,470 MHz. Racconto anche lì.
 
-— un amico che diverte
+— Amicodiverte

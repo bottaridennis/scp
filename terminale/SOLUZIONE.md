@@ -108,7 +108,7 @@ Omaggio ad Amico Diverte (racconti horror).
 | Cosa | Dove |
 |---|---|
 | Comando nascosto (non compare in `help`) | `amicodiverte` |
-| Racconto horror n. 47, firmato «un amico che diverte» | `/pubblico/racconto-horror-047.txt` (L0) |
+| Racconto horror n. 47, firmato «Amicodiverte» | `/pubblico/racconto-horror-047.txt` (L0) |
 | Radio «La notte dei racconti», **solo dalle 21:00 alle 05:00** (ora reale) | `radio 4,47` (L0; un dettaglio in più a L2) |
 | Fascicolo del soggetto di interesse SdI-47-N «Il Narratore» | `/archivio/sicurezza/soggetti-di-interesse/narratore.txt` (L1, si completa a L2 e L3) |
 | Voce n. 16 della Fonoteca, «Il Narratore» | dopo aver letto il fascicolo |
