@@ -66,7 +66,7 @@ export class Terminal {
       if (this.running) this.skip();
       this.focus();
     });
-    window.addEventListener('keydown', (e) => {
+    root.addEventListener('keydown', (e) => {
       if (e.target !== this.input && this.running && !e.metaKey && !e.ctrlKey) this.skip();
     });
   }
@@ -148,6 +148,43 @@ export class Terminal {
         else requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
+    });
+  }
+
+  /** Shows an image inline, tinted like the phosphor screen. */
+  printImage(src: string, caption: string): Promise<void> {
+    return new Promise((resolve) => {
+      const done = () => {
+        this.queue.push({ lines: [], cps: Infinity, resolve });
+        if (!this.running) void this.drain();
+      };
+      const fig = document.createElement('figure');
+      fig.className = 'crt-figure';
+      const img = document.createElement('img');
+      img.alt = caption;
+      img.loading = 'lazy';
+      img.referrerPolicy = 'no-referrer';
+      img.src = src;
+      img.addEventListener('load', () => this.scroll());
+      img.addEventListener('error', () => {
+        img.remove();
+        fig.prepend(Object.assign(document.createElement('div'), { className: 'crt-line t-dim', textContent: '[immagine non disponibile]' }));
+      });
+      const cap = document.createElement('figcaption');
+      cap.className = 'crt-line t-dim';
+      cap.textContent = caption;
+      fig.append(img, cap);
+      // Wait for queued text before inserting the image.
+      this.queue.push({
+        lines: [],
+        cps: Infinity,
+        resolve: () => {
+          this.out.appendChild(fig);
+          this.scroll();
+        },
+      });
+      if (!this.running) void this.drain();
+      done();
     });
   }
 

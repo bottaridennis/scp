@@ -3,7 +3,8 @@ livello: 3
 ---
 # promemoria — A. Costa
 
-- Registro personale cifrato (registro-personale.enc).
+- Registro personale cifrato (.registro-personale.enc, nascosto:
+  dal terminale si vede con ls -a).
   Chiave: la parola interdetta del Protocollo Silenzio.
   L'unica che non posso dimenticare, ovviamente.
 

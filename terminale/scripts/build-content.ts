@@ -33,6 +33,7 @@ import type {
   MailEntry,
   Manifest,
   Segment,
+  ArchiveConfig,
 } from '../src/engine/types.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,6 +55,7 @@ type GameConfig = {
   logo: string[];
   boot: string[];
   crediti: string[];
+  archivio?: ArchiveConfig;
 };
 
 type Front = Record<string, string | number | boolean>;
@@ -149,6 +151,18 @@ function asLevel(v: unknown, file: string, fallback = 0): number {
 
 function str(v: unknown): string | undefined {
   return v === undefined || v === '' ? undefined : String(v);
+}
+
+function validateArchive(a: ArchiveConfig | undefined): ArchiveConfig | undefined {
+  if (!a) return undefined;
+  if (!a.cartella?.startsWith('/') || a.cartella === '/') throw new ContentError('gioco.json: archivio.cartella deve essere un percorso come /archivio-scp');
+  for (const [k, l] of Object.entries(a.livelli ?? {})) {
+    if (!Number.isInteger(l) || l < 0 || l > MAX_LEVEL) throw new ContentError(`gioco.json: archivio.livelli.${k} non valido (${l})`);
+  }
+  if (a.sopra_livello && !['bloccati', 'nascosti'].includes(a.sopra_livello)) {
+    throw new ContentError('gioco.json: archivio.sopra_livello deve essere "bloccati" o "nascosti"');
+  }
+  return a;
 }
 
 /* ------------------------------------------------------------------ */
@@ -369,6 +383,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
       logo: config.logo ?? [],
       boot: config.boot ?? [],
       crediti: config.crediti ?? [],
+      archivio: validateArchive(config.archivio),
     },
     check,
     utenti,

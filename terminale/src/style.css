@@ -1,177 +1,84 @@
+/* CRT terminal (boot screen and terminal windows). */
 :root {
   --phosphor: #3dff7a;
   --phosphor-dim: #1f9c4a;
   --phosphor-faint: #12592b;
-  --bg: #030803;
+  --crt-bg: #030803;
   --alert: #ff5c4d;
   --warn: #e8ff6a;
   --glow: 0 0 2px rgb(61 255 122 / 0.9), 0 0 8px rgb(61 255 122 / 0.45), 0 0 18px rgb(61 255 122 / 0.18);
-  --font-size: 22px;
-  color-scheme: dark;
 }
-
 :root[data-phosphor="ambra"] {
   --phosphor: #ffb84d;
   --phosphor-dim: #b07425;
   --phosphor-faint: #5e3d12;
-  --bg: #0a0602;
+  --crt-bg: #0a0602;
   --alert: #ff6a4d;
   --warn: #fff1a8;
   --glow: 0 0 2px rgb(255 184 77 / 0.9), 0 0 8px rgb(255 184 77 / 0.45), 0 0 18px rgb(255 184 77 / 0.18);
 }
 
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  height: 100%;
-  background: #000;
-  overflow: hidden;
-}
-
-body {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  font-family: "VT323", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
-  font-size: var(--font-size);
-  line-height: 1.22;
-  color: var(--phosphor);
-}
-
-.crt {
+.crt-term {
   position: relative;
-  flex: 1;
-  min-height: 0;
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--bg) 70%, var(--phosphor-faint)) 0%, var(--bg) 62%, #000 100%);
-  animation: flicker 6s infinite steps(1);
-}
-
-.crt-screen {
-  position: absolute;
-  inset: 0;
+  height: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: max(20px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 28px max(24px, env(safe-area-inset-left));
+  padding: 14px 18px 18px;
+  color: var(--phosphor);
+  font-family: "VT323", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 20px;
+  line-height: 1.22;
   text-shadow: var(--glow);
   scrollbar-width: thin;
   scrollbar-color: var(--phosphor-faint) transparent;
 }
-
-/* Scanlines, vignette and a slow rolling band */
-.crt-overlay {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0) 0 2px, rgb(0 0 0 / 0.28) 2px 3px),
-    radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.65) 100%);
-}
-.crt-overlay::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent, rgb(255 255 255 / 0.035) 50%, transparent);
-  height: 18%;
-  animation: roll 7s linear infinite;
+/* Scanlines over a phosphor glow */
+.crt-term {
+  background-color: var(--crt-bg);
+  background-image:
+    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0) 0 2px, rgb(0 0 0 / 0.22) 2px 3px),
+    radial-gradient(ellipse at center, color-mix(in srgb, var(--crt-bg) 70%, var(--phosphor-faint)) 0%, var(--crt-bg) 65%, #000 100%);
+  background-attachment: local, scroll;
 }
 
-@keyframes roll {
-  from { transform: translateY(-120%); }
-  to { transform: translateY(650%); }
-}
-
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  41% { opacity: 0.97; }
-  42% { opacity: 1; }
-  77% { opacity: 0.985; }
-  78% { opacity: 1; }
-}
-
-.crt-line {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  min-height: 1.22em;
-}
-
-.t-cmd { color: var(--phosphor); opacity: 0.85; }
+.crt-line { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.22em; }
+.t-cmd { opacity: 0.85; }
 .t-dim, .t-locked { color: var(--phosphor-dim); text-shadow: none; }
 .t-h { font-weight: bold; letter-spacing: 0.06em; }
 .t-hl { filter: brightness(1.25); }
-.t-dir { color: var(--phosphor); font-weight: bold; }
+.t-dir { font-weight: bold; }
 .t-quote { color: var(--phosphor-dim); }
-.t-ok { color: var(--phosphor); }
 .t-warn { color: var(--warn); text-shadow: 0 0 6px color-mix(in srgb, var(--warn) 50%, transparent); }
 .t-err, .t-sys { color: var(--alert); text-shadow: 0 0 6px color-mix(in srgb, var(--alert) 55%, transparent); }
-.t-logo { color: var(--phosphor); line-height: 1.05; font-family: ui-monospace, "Cascadia Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: 0.8em; }
-.t-intr-head { color: var(--bg); background: var(--alert); text-shadow: none; display: inline-block; padding: 0 0.4em; margin-top: 0.4em; }
-.t-intr { color: var(--alert); text-shadow: 0 0 4px var(--alert), 0 0 14px color-mix(in srgb, var(--alert) 45%, transparent); }
-.t-final { color: var(--warn); }
+.t-logo { line-height: 1.05; font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: 0.8em; }
+.t-intr { color: var(--alert); }
 
-.crt-input {
-  display: flex;
-  align-items: baseline;
-  gap: 0;
-  margin: 0;
-}
+.crt-input { display: flex; align-items: baseline; margin: 0; }
 .crt-prompt { white-space: pre; flex-shrink: 0; }
 .crt-field {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 0;
-  outline: 0;
-  padding: 0;
-  color: inherit;
-  font: inherit;
-  text-shadow: inherit;
-  caret-color: var(--phosphor);
-  caret-shape: block;
+  flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; padding: 0;
+  color: inherit; font: inherit; text-shadow: inherit; caret-color: var(--phosphor);
 }
 .is-busy .crt-input { opacity: 0.35; }
 
-.is-glitch {
-  animation: glitch 0.18s infinite steps(2);
+.crt-figure { margin: 8px 0; }
+.crt-figure img {
+  display: block;
+  max-width: min(100%, 520px);
+  max-height: 46vh;
+  filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(2.6) brightness(0.95) contrast(1.1);
+  border: 1px solid var(--phosphor-faint);
 }
-@keyframes glitch {
-  0% { transform: translate(0); filter: none; }
-  25% { transform: translate(-3px, 1px) skewX(-2deg); filter: hue-rotate(40deg) contrast(1.4); }
-  50% { transform: translate(3px, -1px); filter: invert(0.1); }
+:root[data-phosphor="ambra"] .crt-figure img { filter: grayscale(1) sepia(1) hue-rotate(-12deg) saturate(2.4) brightness(0.95); }
+
+.is-glitch .crt-term { animation: crt-glitch 0.18s infinite steps(2); }
+@keyframes crt-glitch {
+  25% { transform: translate(-2px, 1px) skewX(-2deg); filter: hue-rotate(40deg) contrast(1.4); }
+  50% { transform: translate(2px, -1px); }
   75% { transform: translate(-1px, 2px) skewX(3deg); filter: saturate(3); }
 }
 
-.touchbar {
-  display: none;
-  gap: 6px;
-  padding: 6px max(8px, env(safe-area-inset-left)) max(6px, env(safe-area-inset-bottom));
-  background: #000;
-  border-top: 1px solid var(--phosphor-faint);
-}
-.touchbar button {
-  flex: 1;
-  font: inherit;
-  font-size: 20px;
-  color: var(--phosphor);
-  background: var(--bg);
-  border: 1px solid var(--phosphor-faint);
-  border-radius: 4px;
-  padding: 8px 0;
-  text-shadow: var(--glow);
-}
-.touchbar button:active { background: var(--phosphor-faint); }
-
-@media (pointer: coarse) {
-  .touchbar { display: flex; }
-}
-
-@media (max-width: 640px) {
-  :root { --font-size: 19px; }
-  .crt-screen { padding: 14px 12px 20px; }
-  /* iOS zooms into inputs below 16px */
+@media (max-width: 760px) {
+  .crt-term { font-size: 18px; padding: 10px 10px 14px; }
   .crt-field { font-size: max(16px, 1em); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .crt, .crt-overlay::after, .is-glitch { animation: none; }
 }

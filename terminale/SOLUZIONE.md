@@ -2,38 +2,52 @@
 
 ⚠ Spoiler completi. File escluso dalla build: serve per i test.
 
+## Su FONDAZIONE OS
+
+- I profili si cambiano da **Start → Cambia utente**: la schermata di login chiede la
+  password (una volta sola: poi il profilo resta sbloccato). Dal Terminale `login`
+  cambia utente solo in quella finestra.
+- Esplora risorse non mostra i file nascosti (`.nome`) e non apre i file cifrati:
+  `ls -a`, `decrypt`, `search` e le frasi dei finali si usano dal **Terminale**.
+- Gli eventi compaiono sul desktop: notifiche, la finestra «Linea interna 4» che si apre
+  da sola, glitch a tutto schermo, il finale a schermo intero.
+- Il percorso qui sotto funziona tutto da un unico terminale (con `login`), oppure
+  cambiando profilo dalla schermata di login e aprendo un terminale per ciascuno.
+
 ## Credenziali e chiavi
 
 | Cosa                          | Valore              | Dove si trova                                              |
 |-------------------------------|---------------------|------------------------------------------------------------|
 | Password `g.rinaldi` (L1)     | `rinaldi214`        | `/manutenzione/nota-it.txt` (formula) + `/pubblico/rubrica-interni.txt` (interno 214) |
-| Chiave `ferri-credenziali.enc`| `veglia`            | `/archivio/comunicazioni/centralino-0303.log` (L1)          |
-| Password `m.ferri` (L2)       | `fondoscala`        | `/home/g.rinaldi/ferri-credenziali.enc` (decifrato)         |
+| Chiave `.ferri-credenziali.enc`| `veglia`            | `/archivio/comunicazioni/centralino-0303.log` (L1)          |
+| Password `m.ferri` (L2)       | `fondoscala`        | `/home/g.rinaldi/.ferri-credenziali.enc` (decifrato)         |
 | Password `a.costa` (L3)       | `saraceno1987`      | `/home/m.ferri/diario.txt` (regola) + `/archivio/verbali/verbale-trasferimento-1987.txt` (Monte Saraceno, 1987); `search saraceno` |
-| Chiave `registro-personale.enc` | `ritorno`         | `/archivio/protocolli/protocollo-silenzio.txt`, punto 6, leggibile solo a livello 3 |
-| Finale buono                  | `sigilla nessuno ascolta` | `/home/a.costa/registro-personale.enc`               |
+| Chiave `.registro-personale.enc` | `ritorno`         | `/archivio/protocolli/protocollo-silenzio.txt`, punto 6, leggibile solo a livello 3 |
+| Finale buono                  | `sigilla nessuno ascolta` | `/home/a.costa/.registro-personale.enc`               |
 | Finale cattivo                | `riapri 4471-vega`  | detto dall'intruso dopo la lettura del registro             |
 
 ## Percorso
 
 ```
-cat LEGGIMI.txt
+cat LEGGIMI.txt                       # (si apre da solo al primo accesso come ospite)
+ls -a                                 # .registro-accessi.log: file nascosto, facoltativo
 cat manutenzione/nota-it.txt          # password provvisoria = cognome + interno
 cat pubblico/rubrica-interni.txt      # Rinaldi: interno 214
 login g.rinaldi                        # password: rinaldi214
-cat appunti.txt                        # il file di Ferri si apre con la parola del turno di notte
+cat appunti.txt                        # il file di Ferri è nascosto e si apre con la parola del turno
+ls -a                                  # .ferri-credenziali.enc
 mail 2                                 # conferma: la chiave è la parola del turno
 cat /archivio/comunicazioni/centralino-0303.log   # parola d'ordine VEGLIA
-decrypt ferri-credenziali.enc veglia
-cat ferri-credenziali.enc              # m.ferri / fondoscala
+decrypt .ferri-credenziali.enc veglia
+cat .ferri-credenziali.enc              # m.ferri / fondoscala
 login m.ferri                          # password: fondoscala
 cat diario.txt                         # password di Costa: nome della montagna + anno, senza "Monte"
 search saraceno                        # oppure: cat /archivio/verbali/verbale-trasferimento-1987.txt
 login a.costa                          # password: saraceno1987
-cat promemoria.txt                     # chiave del registro = parola interdetta del Protocollo Silenzio
+cat promemoria.txt                     # chiave del registro = parola interdetta; il file è nascosto (ls -a)
 cat /archivio/protocolli/protocollo-silenzio.txt  # al livello 3 compare: RITORNO
-decrypt registro-personale.enc ritorno
-cat registro-personale.enc             # la verità e la frase del sigillo
+decrypt .registro-personale.enc ritorno
+cat .registro-personale.enc             # la verità e la frase del sigillo
 # attendere il messaggio dell'intruso (circa 8 secondi), poi:
 sigilla nessuno ascolta                # FINALE BUONO
 ```
