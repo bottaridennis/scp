@@ -86,6 +86,12 @@ Gli **eventi** della storia funzionano su tutto il desktop:
 Un evento scatta quando un account aperto, del desktop o di un terminale, ha il livello
 richiesto.
 
+## Easter egg «Il Narratore»
+
+Omaggio ad Amico Diverte. Le app **Podcast** e **Browser** (`src/os/apps/web.ts`) usano gli
+embed ufficiali di Spotify e YouTube (`youtube-nocookie.com`); i contenuti esterni si caricano
+solo quando si apre l'app. Gli ID degli show e del canale sono in cima al file.
+
 ## Struttura
 
 ```

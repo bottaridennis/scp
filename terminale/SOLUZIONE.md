@@ -115,6 +115,8 @@ Omaggio ad Amico Diverte (racconti horror).
 | Telecamera CAM-P1 · Studio di registrazione (ON AIR, sedia che si gira) | app Telecamere (L1) |
 | Porta «Livello 0 — moquette gialla» (omaggio alle Backrooms) | `/archivio/tecnico/.planimetria-1987.txt` (L2) |
 | Il libro «Racconti Horror» sparito dalla saletta | `/pubblico/bacheca.txt` |
+| App **Podcast** sul desktop: i suoi podcast su Spotify (embed ufficiale) | «Paranormale — Attraverso il velo», «Le Cronache dei Pixel» |
+| App **Browser** sul desktop: unico sito raggiungibile, il suo canale YouTube (embed ufficiale); ogni altro indirizzo dà «ERR_CENERE_ISOLAMENTO» | segnalibro nella pagina iniziale; dopo 45 s compare «Spettatori da questa rete: 2 — T-03 · interno 4» |
 
 ## Eventi
 
