@@ -108,6 +108,19 @@
     "~",
     "Sessione ospite avviata su T-03. Inizia leggendo LEGGIMI.txt (cat LEGGIMI.txt)."
   ],
+  "intro": {
+    "titolo": "Ordine di incarico n. DA-47-07",
+    "testo": [
+      "Destinatario: tecnico di recupero dati, Dipartimento Archivi della Fondazione SCP.",
+      "CHI SEI. Sei un tecnico del Dipartimento Archivi. Non hai credenziali per il Sito-47: lavorerai come utente ospite, l'unico profilo che la postazione accetta senza password.",
+      "DOVE SEI. Il Sito-47 è isolato dal 3 marzo 2026, dopo un evento di contenimento nell'Ala Est. Il personale è stato evacuato e la rete del sito è stata scollegata da quella della Fondazione. Un solo terminale, T-03, è rimasto acceso: lo raggiungerai da remoto attraverso la vecchia linea di manutenzione, l'unica che non è stata sigillata.",
+      "COSA DEVI FARE. Ricostruire che cosa è successo la notte del 3 marzo. Leggi documenti, email e registri; recupera le credenziali del personale per salire di livello; decifra ciò che è cifrato. Il Terminale vede più cose delle applicazioni grafiche: usalo.",
+      "LO SCOPO. Il Dipartimento deve decidere se il Sito-47 può essere riaperto. Ricostruisci l'incidente fino in fondo e chiudi la sessione in sicurezza.",
+      "PRECAUZIONI. Non rispondere a messaggi provenienti dall'interno 4. Non eseguire comandi di cui non comprendi l'effetto. Non dire a nessuno il tuo nome.",
+      "Sei il settimo tecnico assegnato a questo incarico. I sei precedenti hanno interrotto la sessione senza consegnare il rapporto.",
+      "— Dipartimento Archivi, Sezione Recupero"
+    ]
+  },
   "crediti": [
     "CREDITI E LICENZE",
     "",

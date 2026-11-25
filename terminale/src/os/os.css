@@ -555,7 +555,7 @@ button { font: inherit; color: inherit; }
 .cam-item.is-active small { color: inherit; }
 .cam-item.is-locked strong { color: #888; }
 .cam-screen { position: relative; background: #000; display: grid; place-items: center; overflow: hidden; }
-.cam-canvas { width: 100%; max-height: 100%; aspect-ratio: 16 / 9; image-rendering: pixelated; filter: contrast(1.15) brightness(0.95); }
+.cam-canvas { width: 100%; max-height: 100%; aspect-ratio: 16 / 9; image-rendering: pixelated; filter: contrast(1.25) brightness(1.15); }
 .cam-hud { position: absolute; top: 8px; left: 10px; right: 10px; display: flex; justify-content: space-between; gap: 10px; font: 13px "VT323", monospace; color: #eaeaea; text-shadow: 1px 1px #000; pointer-events: none; }
 .cam-rec { color: #ff4b4b; animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }

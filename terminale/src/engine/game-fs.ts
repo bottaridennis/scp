@@ -116,6 +116,6 @@ const GLYPHS = '▓▒░█#%&@$?!<>/\\|~^';
 /** Eco's corruption: a different garble at every reading. */
 export function corrupt(text: string): string {
   return [...text]
-    .map((c) => (/\s/.test(c) || Math.random() > 0.28 ? c : GLYPHS[Math.floor(Math.random() * GLYPHS.length)]))
+    .map((c) => (/\s/.test(c) || Math.random() > 0.42 ? c : GLYPHS[Math.floor(Math.random() * GLYPHS.length)]))
     .join('');
 }

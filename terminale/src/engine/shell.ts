@@ -558,7 +558,7 @@ export class Shell {
 
   private async join(args: string[]) {
     const t = this.term;
-    if (args.length < 2) return t.echo('Uso: unisci <frammento> <frammento> …', 'err');
+    if (!args.length) return t.echo('Uso: unisci <frammento> <frammento> …', 'err');
     const parts: { n: number; tot: number; word: string }[] = [];
     for (const a of args) {
       const res = await this.fs.read(this.resolve(a), this.account);

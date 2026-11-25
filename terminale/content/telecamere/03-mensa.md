@@ -1,0 +1,10 @@
+---
+nome: CAM-M1 · Mensa
+livello: 1
+scena: mensa
+comportamento: sedie
+---
+MENSA: NESSUNA PRESENZA
+LE SEDIE SONO STATE SPOSTATE
+TOBIA?
+QUALCUNO HA APPARECCHIATO PER TRE

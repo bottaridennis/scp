@@ -449,7 +449,7 @@ export const camerasApp: AppDef = {
         }
       }
 
-      noise(g, 0.12);
+      noise(g, 0.07);
       scanlines(g);
       if (Math.random() < 0.02) tear(g);
       if (now > nextFlash) {
