@@ -28,7 +28,7 @@ export const radioApp: AppDef = {
     win.body.append(
       h(
         'div',
-        { class: 'radio' },
+        { class: 'radio-app' },
         h('div', { class: 'radio-panel' }, display, meter),
         dial,
         h('div', { class: 'radio-controls' }, step(-0.1), step(-0.005), input, step(0.005), step(0.1)),
@@ -57,6 +57,7 @@ export const radioApp: AppDef = {
       }, null);
       const strength = near ? Math.max(0, 1 - near.d / 0.06) : 0;
       (meter.firstElementChild as HTMLElement).style.width = `${Math.round(strength * 100)}%`;
+      session.sound.radioStatic(strength);
       const tuned = near && near.d < 0.0051 ? near.s : null;
       if (tuned !== station) {
         station = tuned;
@@ -125,7 +126,9 @@ export const radioApp: AppDef = {
       typing++;
       clearInterval(noiseTimer);
       stopAudio();
+      session.sound.radioStatic(null);
     };
     setFreq(freq);
+    if (!station) void play(); // start with static, not a blank panel
   },
 };

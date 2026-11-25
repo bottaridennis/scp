@@ -564,7 +564,7 @@ button { font: inherit; color: inherit; }
 @keyframes cam-msg { 0% { opacity: 0; } 5%, 80% { opacity: 1; } 100% { opacity: 0; } }
 
 /* Radio */
-.radio { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #5d4f3c; }
+.radio-app { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #5d4f3c; }
 .radio-panel { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; background: #1d1a12; border: 2px inset #8a7a5a; }
 .radio-freq { font: 34px "VT323", monospace; color: #ffcf6b; text-shadow: 0 0 8px rgb(255 190 80 / 0.6); }
 .radio-meter { width: 120px; height: 10px; background: #000; border: 1px solid #8a7a5a; }
@@ -572,7 +572,7 @@ button { font: inherit; color: inherit; }
 .radio-dial { width: 100%; accent-color: #ffcf6b; }
 .radio-controls { display: flex; gap: 4px; align-items: center; }
 .radio-input { flex: 1; text-align: center; }
-.radio-out { flex: 1; min-height: 140px; font-size: 19px; white-space: pre-wrap; }
+.radio-out { flex: 1; min-height: 140px; align-self: stretch; overflow: auto; font-size: 19px; white-space: pre-wrap; }
 
 /* Fonoteca */
 .voices { display: flex; flex-direction: column; gap: 10px; }
