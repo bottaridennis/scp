@@ -13,7 +13,7 @@ const PAGE = 200;
 
 type ExplorerState = { path: string; history: string[]; page: number };
 
-function nodeIcon(n: VNode) {
+export function nodeIcon(n: VNode) {
   if (n.kind === 'dir') return n.locked ? ICONS.folderLocked : ICONS.folder;
   if (n.locked) return ICONS.docLocked;
   if (n.encrypted) return ICONS.docEncrypted;
