@@ -37,6 +37,11 @@ export const radioApp: AppDef = {
     );
 
     let station: RadioEntry | null = null;
+    let playing: HTMLAudioElement | null = null;
+    const stopAudio = () => {
+      if (playing) session.sound.stopVoice();
+      playing = null;
+    };
     let typing = 0;
     let noiseTimer = 0;
 
@@ -62,6 +67,7 @@ export const radioApp: AppDef = {
     async function play() {
       const my = ++typing;
       clearInterval(noiseTimer);
+      stopAudio();
       out.replaceChildren();
       if (!station) {
         noiseTimer = window.setInterval(() => {
@@ -80,6 +86,26 @@ export const radioApp: AppDef = {
       const body = h('div', { class: 'crt-line' });
       out.append(head, body);
       session.sound.alert('sistema');
+      if (station.a) {
+        const file = station.a;
+        const listen = h('button', { type: 'button', class: 'btn radio-listen' }, '▶ Ascolta la trasmissione');
+        listen.addEventListener('click', () => {
+          if (playing) {
+            stopAudio();
+            listen.textContent = '▶ Ascolta la trasmissione';
+          } else {
+            playing = session.sound.voice(file, true);
+            listen.textContent = '■ Ferma';
+            playing?.addEventListener('ended', () => {
+              playing = null;
+              listen.textContent = '▶ Ascolta la trasmissione';
+            });
+          }
+        });
+        out.prepend(listen);
+        playing = session.sound.voice(file);
+        if (playing) listen.textContent = '■ Ferma';
+      }
       for (let i = 0; i <= text.length; i += 2) {
         if (my !== typing) return;
         body.textContent = text.slice(0, i);
@@ -95,6 +121,7 @@ export const radioApp: AppDef = {
     win.onClose = () => {
       typing++;
       clearInterval(noiseTimer);
+      stopAudio();
     };
     setFreq(freq);
   },

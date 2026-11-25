@@ -92,6 +92,14 @@ Omaggio ad Amico Diverte. L'app **Podcast** (`src/os/apps/web.ts`) usa l'embed u
 Spotify, caricato solo quando si apre l'app; il **Browser** ha una pagina dedicata
 (`sito47://narratore`) con i suoi link veri, che si aprono in una nuova scheda.
 
+## Voci registrate
+
+Le registrazioni sono in `public/audio/` (MP3 mono 64 kbps), generate con ElevenLabs. Sono
+file pubblici, quindi il build accetta `audio:` solo su trasmissioni radio ed eventi di
+livello 0. Si collegano con `audio: <file>.mp3` (radio, eventi) e con `"audio"` in `intro`
+(`gioco.json`). Partono da sole solo con i suoni attivi; i pulsanti «Ascolta» funzionano
+sempre.
+
 ## Struttura
 
 ```
@@ -290,6 +298,7 @@ livello: 0
 nome: Frequenza morta
 dopo_evento: …           # facoltativo
 ora: 21:00-05:00         # facoltativo: in onda solo in questa fascia oraria
+audio: file.mp3          # facoltativo, solo livello 0: registrazione in public/audio/
 ---
 Testo trasmesso (censura supportata).
 

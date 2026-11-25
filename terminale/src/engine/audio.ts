@@ -3,6 +3,7 @@ export class Sound {
   private ctx: AudioContext | null = null;
   private hum: { stop: () => void } | null = null;
   private lastClick = 0;
+  private current: HTMLAudioElement | null = null;
   enabled = false;
 
   private context(): AudioContext | null {
@@ -18,7 +19,35 @@ export class Sound {
   setEnabled(on: boolean) {
     this.enabled = on;
     if (on) this.startHum();
-    else this.stopHum();
+    else {
+      this.stopHum();
+      this.stopVoice();
+    }
+  }
+
+  /**
+   * Plays a recorded voice from public/audio/ (one at a time). Without `force` it only plays
+   * when sounds are on; `force` is for an explicit "play" button.
+   */
+  voice(file: string, force = false): HTMLAudioElement | null {
+    if (!this.enabled && !force) return null;
+    this.stopVoice();
+    const audio = new Audio(`${import.meta.env.BASE_URL}audio/${file}`);
+    audio.volume = 0.9;
+    this.current = audio;
+    audio.addEventListener('ended', () => {
+      if (this.current === audio) this.current = null;
+    });
+    void audio.play().catch(() => {
+      if (this.current === audio) this.current = null;
+    });
+    return audio;
+  }
+
+  stopVoice() {
+    if (!this.current) return;
+    this.current.pause();
+    this.current = null;
   }
 
   /** Must be called from a user gesture on some browsers. */

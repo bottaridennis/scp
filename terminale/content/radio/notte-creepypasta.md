@@ -3,6 +3,7 @@ frequenza: 4.47
 livello: 0
 ora: 21:00-05:00
 nome: La notte dei racconti — 4,470 MHz (solo di notte)
+audio: notte-racconti.mp3
 ---
 …bentornati, amici. Spegnete la luce, mettete le cuffie.
 Stanotte vi racconto la storia di un sito sotto la montagna, dove c'era una cosa che

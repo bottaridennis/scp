@@ -85,6 +85,8 @@ export type EventEntry = {
     giorno?: string;
   };
   ritardo: number;
+  /** Recorded voice in public/audio/, played when the event fires (sounds on). */
+  a?: string;
   b: Sealed<EventPayload>;
 };
 
@@ -102,7 +104,7 @@ export type Manifest = {
     /** Optional mount of the real SCP archive (public data, levels are a game rule). */
     archivio?: ArchiveConfig;
     /** Briefing shown before the first login. */
-    intro?: { titolo: string; testo: string[] };
+    intro?: { titolo: string; testo: string[]; audio?: string };
   };
   radio: RadioEntry[];
   voci: VoiceEntry[];
@@ -138,6 +140,8 @@ export type RadioEntry = {
   v?: string;
   /** Only on air in this time window, "HH:MM-HH:MM" (local time). */
   o?: string;
+  /** Recorded transmission in public/audio/. */
+  a?: string;
   b: Sealed<RadioPayload>;
 };
 
