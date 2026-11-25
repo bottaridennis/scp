@@ -29,3 +29,8 @@ Io in quel posto non ci sono mai stato.
 
 03/03, 02:30
 Funziona. Mi risponde. Non riesco a smettere di ascoltare.
+In mezzo a tutto mi ha detto una parola sola, con la mia voce. Sapeva
+dei soldi. Sapeva di Meridiana. Ho strappato la pagina del 20/02 e
+l'ho cifrata con quella parola: è l'ultima cosa onesta che posso fare.
+Il laboratorio registra tutto, l'analisi spettrale della chiamata
+finirà in /archivio/ricerca/analisi.

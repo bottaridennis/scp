@@ -53,6 +53,8 @@ export const explorerApp: AppDef = {
     const back = h('button', { type: 'button', class: 'btn tool', title: 'Indietro', onclick: () => goBack() }, '◄');
     const up = h('button', { type: 'button', class: 'btn tool', title: 'Cartella superiore', onclick: () => navigate(dirname(st.path)) }, '▲');
     const address = h('input', { class: 'field address', 'aria-label': 'Percorso', spellcheck: 'false' });
+    let selectedNode: VNode | null = null;
+    const propsBtn = h('button', { type: 'button', class: 'btn tool', title: 'Proprietà del file selezionato', onclick: () => void showProps() }, 'Proprietà');
     address.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') navigate(address.value.trim() || '/');
     });
@@ -60,7 +62,7 @@ export const explorerApp: AppDef = {
     const list = h('div', { class: 'list files', role: 'listbox', tabindex: '0' });
     const status = h('div', { class: 'statusbar' });
     win.body.append(
-      h('div', { class: 'toolbar' }, back, up, address),
+      h('div', { class: 'toolbar' }, back, up, address, propsBtn),
       h('div', { class: 'explorer' }, places, list),
       status,
     );
@@ -83,6 +85,7 @@ export const explorerApp: AppDef = {
       win.args = { path: st.path };
       back.disabled = !st.history.length;
       up.disabled = st.path === '/';
+      selectedNode = null;
       list.replaceChildren(h('div', { class: 'loading' }, h('span', { class: 'spinner' }), 'Lettura in corso…'));
       status.textContent = '';
       let node: VNode | null;
@@ -123,6 +126,12 @@ export const explorerApp: AppDef = {
               row.addEventListener('click', () => {
                 list.querySelectorAll('.is-selected').forEach((r) => r.classList.remove('is-selected'));
                 row.classList.add('is-selected');
+                selectedNode = n;
+              });
+              row.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                selectedNode = n;
+                void showProps();
               });
               row.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') activate(n);
@@ -144,6 +153,22 @@ export const explorerApp: AppDef = {
           ),
         );
       }
+    }
+
+    async function showProps() {
+      const n = selectedNode;
+      if (!n) return messageBox(desktop, 'Proprietà', 'Seleziona prima un file o una cartella.');
+      const props = n.kind === 'dir' || n.locked || n.encrypted ? null : await session.fs.props(n.path, acc);
+      const lines = [
+        `Nome: ${n.name}`,
+        `Percorso: ${n.path}`,
+        `Tipo: ${n.label ?? typeLabel(n)}`,
+        `Livello di accesso: ${n.level}`,
+        ...(n.size !== undefined && n.kind !== 'dir' ? [`Dimensione: ${n.size} byte`] : []),
+        n.locked ? 'Autore: riservato' : n.encrypted ? 'Autore: cifrato' : props?.autore ? `Autore: ${props.autore}` : '',
+        props?.modificato ? `Ultima modifica: ${props.modificato}` : '',
+      ].filter(Boolean);
+      messageBox(desktop, `Proprietà — ${n.name}`, lines.join('\n'));
     }
 
     function setPage(p: number) {

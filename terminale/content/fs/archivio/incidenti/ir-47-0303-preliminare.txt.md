@@ -1,5 +1,7 @@
 ---
 livello: 2
+autore: p.vasari
+modificato: 03/03/2026 07:41
 ---
 # RAPPORTO D'INCIDENTE IR-47-0303 — versione preliminare
 Redatto da: Agente B. Leone, sicurezza · 03/03/2026 ore 07:15

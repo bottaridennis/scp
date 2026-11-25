@@ -11,7 +11,7 @@ export function messageBox(desktop: Desktop, title: string, text: string, kind: 
       'div',
       { class: `msgbox msgbox-${kind}` },
       icon(kind === 'info' ? ICONS.logo : kind === 'denied' ? ICONS.docLocked : ICONS.warning, 'ico ico-lg'),
-      h('p', {}, text),
+      h('p', { class: 'msgbox-text' }, text),
     ),
     h('div', { class: 'btn-row msgbox-btns' }, ok),
   );

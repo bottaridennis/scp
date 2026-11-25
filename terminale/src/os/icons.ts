@@ -20,6 +20,7 @@ export const ICONS = {
   message: svg('<path d="M1 2h14v9H6l-3 3v-3H1z" fill="#2a0c0c" stroke="#c22"/><path d="M4 5h8M4 7.5h5" stroke="#ff5c4d"/>'),
   warning: svg('<path d="M8 1l7 13H1z" fill="#e8c34a" stroke="#6b5310"/><rect x="7.2" y="5" width="1.6" height="5" fill="#222"/><rect x="7.2" y="11" width="1.6" height="1.6" fill="#222"/>'),
   power: svg('<path d="M5 3.5a5.5 5.5 0 106 0" fill="none" stroke="#7a1f1f" stroke-width="1.8"/><path d="M8 1v7" stroke="#7a1f1f" stroke-width="1.8"/>'),
+  trash: svg('<path d="M3 4h10l-1 11H4z" fill="#d8dcdf" stroke="#444"/><rect x="2" y="2.5" width="12" height="1.8" fill="#9aa3a8" stroke="#444"/><path d="M6 6v7M8 6v7M10 6v7" stroke="#777"/>'),
   swap: svg('<path d="M2 5h10l-2.5-2.5M14 11H4l2.5 2.5" fill="none" stroke="#333" stroke-width="1.6"/>'),
 };
 

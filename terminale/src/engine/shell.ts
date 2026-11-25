@@ -29,7 +29,7 @@ export type ShellHost = {
   userChanged?: (account: Game) => void;
 };
 
-const ORDER = ['help', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'open', 'search', 'decrypt', 'mail', 'clear', 'audio', 'tema', 'crediti', 'reset', 'exit'];
+const ORDER = ['help', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'stat', 'open', 'search', 'decrypt', 'mail', 'clear', 'audio', 'tema', 'crediti', 'reset', 'exit'];
 
 export class Shell {
   private readonly term: Terminal;
@@ -237,6 +237,12 @@ export class Shell {
         complete: 'path',
         run: ([arg]) => (arg ? this.cat(arg) : t.echo('Uso: cat <file>', 'err')),
       },
+      stat: {
+        usage: 'stat <file>',
+        help: 'proprietà di un file (autore, modifica)',
+        complete: 'path',
+        run: ([arg]) => (arg ? this.stat(arg) : t.echo('Uso: stat <file>', 'err')),
+      },
       open: {
         usage: 'open <file>',
         help: 'apre un file o una cartella nelle app grafiche',
@@ -421,6 +427,24 @@ export class Shell {
       ],
       { cps: 1500 },
     );
+  }
+
+  private async stat(arg: string) {
+    const t = this.term;
+    const path = this.resolve(arg);
+    const node = await this.slow(this.fs.stat(path, this.account));
+    if (!node) return t.echo(`stat: ${arg}: file inesistente`, 'err');
+    const props = node.kind === 'dir' || node.locked ? null : await this.fs.props(path, this.account);
+    const kind = node.kind === 'dir' ? 'cartella' : node.encrypted ? 'file cifrato' : node.kind === 'image' ? 'immagine' : node.kind === 'html' ? 'documento SCP' : 'documento di testo';
+    return t.echo([
+      { text: `File:      ${node.path}` },
+      { text: `Tipo:      ${kind}${node.hidden ? ' (nascosto)' : ''}` },
+      { text: `Livello:   ${node.level}${node.locked ? ` — ${node.reason ?? 'accesso negato'}` : ''}` },
+      ...(node.size !== undefined && node.kind !== 'dir' ? [{ text: `Dim.:      ${formatSize(node.size)}` }] : []),
+      ...(node.locked ? [{ text: 'Autore e data di modifica: riservati.', cls: 'dim' }] : node.encrypted ? [{ text: 'Autore e data di modifica: cifrati.', cls: 'dim' }] : []),
+      ...(props?.autore ? [{ text: `Autore:    ${props.autore}`, cls: 'hl' }] : []),
+      ...(props?.modificato ? [{ text: `Modificato: ${props.modificato}`, cls: 'hl' }] : []),
+    ]);
   }
 
   private async open(arg?: string) {

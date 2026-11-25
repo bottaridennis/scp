@@ -540,3 +540,5 @@ button { font: inherit; color: inherit; }
   .scp-content { font-size: 14px; }
   .scp-content .scp-image-block { float: none; max-width: 100%; margin: 10px 0; }
 }
+.msgbox-text { white-space: pre-line; overflow-wrap: anywhere; }
+.login-user-row { display: grid; gap: 6px; }

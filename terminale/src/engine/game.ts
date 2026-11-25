@@ -11,13 +11,13 @@ import {
   open,
   saltFor,
 } from './crypto-core.ts';
-import type { DocBody, EventEntry, EventPayload, FileEntry, Keyring, MailEntry, Manifest } from './types.ts';
+import type { DocBody, DocMeta, EventEntry, EventPayload, FileEntry, Keyring, MailEntry, Manifest } from './types.ts';
 import type { Store } from './state.ts';
 
 export const GUEST = 'ospite';
 
 export type ReadResult =
-  | { status: 'ok'; text: string }
+  | { status: 'ok'; text: string; meta?: DocMeta }
   | { status: 'denied'; level: number }
   | { status: 'encrypted' };
 
@@ -117,7 +117,14 @@ export class Game {
 
   /** Every file visible to the current user: public tree plus own home. */
   allFiles(): FileEntry[] {
-    return [...this.manifest.files, ...(this.keyring?.home ?? [])];
+    const fired = this.store.state.fired;
+    return [...this.manifest.files, ...(this.keyring?.home ?? [])].filter((f) => !f.v || fired.includes(f.v));
+  }
+
+  /** Whether a user appears on the login screen (hidden profiles only after a first login). */
+  isListed(name: string) {
+    const u = this.manifest.utenti.find((x) => x.n === name);
+    return Boolean(u) && (!u!.h || this.store.state.logins.includes(name));
   }
 
   homeOf(user: string) {
@@ -160,7 +167,7 @@ export class Game {
     try {
       const res = await open<DocBody>(entry.b, (d) => this.keyForLayer(entry, d));
       if ('lockedAt' in res) return entry.e ? { status: 'encrypted' } : { status: 'denied', level: entry.l };
-      return { status: 'ok', text: await this.renderBody(res.value) };
+      return { status: 'ok', text: await this.renderBody(res.value), meta: res.value.m };
     } catch {
       // Stored decrypt key no longer valid (content rebuilt).
       if (entry.e) {

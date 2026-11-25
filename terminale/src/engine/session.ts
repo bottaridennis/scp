@@ -71,7 +71,7 @@ export class Session {
   profiles(): { name: string; unlocked: boolean }[] {
     return [
       { name: GUEST, unlocked: true },
-      ...this.desktop.users.map((name) => ({ name, unlocked: this.desktop.hasStoredKey(name) })),
+      ...this.desktop.users.filter((name) => this.desktop.isListed(name)).map((name) => ({ name, unlocked: this.desktop.hasStoredKey(name) })),
     ];
   }
 

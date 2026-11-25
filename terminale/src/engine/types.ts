@@ -18,8 +18,11 @@ export type Segment = {
   d: Envelope;
 };
 
-/** A document body: text with segment markers (\u0001<index>\u0001) plus the segments. */
-export type DocBody = { t: string; g: Segment[] };
+/** Document properties (shown by `stat` and "Proprietà"), encrypted with the document. */
+export type DocMeta = { autore?: string; modificato?: string; didascalia?: string };
+
+/** A document body: text with segment markers (\u0001<index>\u0001) plus the segments. Images keep a data URL in `t`. */
+export type DocBody = { t: string; g: Segment[]; m?: DocMeta };
 
 export type FileEntry = {
   /** Absolute virtual path, e.g. /archivio/ricerca/scheda.txt */
@@ -32,6 +35,8 @@ export type FileEntry = {
   s: number;
   /** Body: level layer outside, decrypt layer inside. */
   b: Sealed<DocBody>;
+  /** Only present after this event has fired. */
+  v?: string;
 };
 
 export type MailEntry = {
@@ -92,7 +97,7 @@ export type Manifest = {
   /** Per-level check values used to validate keys restored from localStorage. */
   check: Record<string, Envelope>;
   /** Users and their keyrings, each sealed with PBKDF2(password). */
-  utenti: { n: string; k: Envelope }[];
+  utenti: { n: string; k: Envelope; h?: boolean }[];
   files: FileEntry[];
   eventi: EventEntry[];
 };
