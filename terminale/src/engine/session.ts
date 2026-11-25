@@ -41,6 +41,7 @@ export class Session {
       const text = await account.renderBody(payload.testo);
       await this.presenter(ev, payload, text);
     });
+    this.events.onFired = () => this.notify();
     this.sound.enabled = this.state.settings.audio;
   }
 

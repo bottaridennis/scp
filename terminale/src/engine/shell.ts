@@ -96,16 +96,11 @@ export class Shell {
 
   /** Shows a waiting line if an operation (e.g. the remote archive) is slow. */
   private async slow<T>(work: Promise<T>, label = 'Connessione all’archivio centrale…'): Promise<T> {
-    let shown = false;
-    const timer = setTimeout(() => {
-      shown = true;
-      void this.term.echo(label, 'dim');
-    }, 350);
+    const timer = setTimeout(() => void this.term.echo(label, 'dim'), 350);
     try {
       return await work;
     } finally {
       clearTimeout(timer);
-      void shown;
     }
   }
 

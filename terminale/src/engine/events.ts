@@ -20,6 +20,8 @@ export class EventRunner {
   private readonly display: EventDisplay;
   private timers = new Map<string, ReturnType<typeof setTimeout>>();
   private firing = new Set<string>();
+  /** Called after an event has fired and been recorded (e.g. to refresh the UI). */
+  onFired: (ev: EventEntry) => void = () => {};
   /** Timed events without conditions count from page load. */
   private readonly loadedAt = Date.now();
 
@@ -93,6 +95,7 @@ export class EventRunner {
     if (!this.state.fired.includes(ev.id)) this.state.fired.push(ev.id);
     if (ev.tipo === 'finale') this.state.ending = ev.id;
     this.store.save();
+    this.onFired(ev);
     this.check();
     return true;
   }

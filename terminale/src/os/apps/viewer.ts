@@ -7,7 +7,7 @@ import { ICONS } from '../icons.ts';
 const handles = new WeakMap<object, (path: string) => void>();
 
 /** Game documents: keeps the typewriter layout, styles titles and redactions. */
-function typedText(text: string): HTMLElement {
+export function typedText(text: string): HTMLElement {
   const pre = h('pre', { class: 'doc-text' });
   for (const line of text.split('\n')) {
     const heading = /^#{1,2}\s/.test(line);

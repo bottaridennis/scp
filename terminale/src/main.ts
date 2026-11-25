@@ -12,6 +12,8 @@ import { Desktop } from './os/desktop.ts';
 import { h } from './os/dom.ts';
 import { LoginScreen } from './os/login.ts';
 import { ScpFS } from './archivio/scp-fs.ts';
+import { mailApp } from './os/apps/mail.ts';
+import { installEventPresenter } from './os/events.ts';
 
 const DATA_URL = `${import.meta.env.BASE_URL}data/archivio.json`;
 
@@ -41,12 +43,9 @@ async function main() {
   if (archive) session.fs.mount(archive.mount, archive);
 
   const desktop = new Desktop(session, app);
-  for (const a of [explorerApp, terminalApp, settingsApp, viewerApp, imageApp]) desktop.register(a);
+  for (const a of [explorerApp, mailApp, terminalApp, settingsApp, viewerApp, imageApp]) desktop.register(a);
 
-  session.presenter = async (ev, payload, text) => {
-    // Phase 1: plain notifications. See os/events.ts for the full presentation.
-    desktop.toast(ev.tipo === 'intruso' ? (payload.da ?? '???') : 'Sistema', text.split('\n')[0], ev.tipo === 'intruso' ? 'alert' : 'info');
-  };
+  installEventPresenter(session, desktop);
 
   const login = new LoginScreen(session, app);
   const showLogin = () =>

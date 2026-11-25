@@ -493,3 +493,50 @@ button { font: inherit; color: inherit; }
   .file-type { display: none; }
   .doc-scroll { padding: 6px; }
 }
+
+/* Mail */
+.mail { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(220px, 38%) 1fr; gap: 4px; padding: 4px; }
+.mail-list { overflow: auto; }
+.mail-item { display: grid; grid-template-columns: 18px 1fr; grid-template-rows: auto auto auto; column-gap: 6px; width: 100%; padding: 6px 8px; border: 0; border-bottom: 1px solid #e3e1da; background: #fff; text-align: left; cursor: pointer; }
+.mail-item .ico { grid-row: span 3; margin-top: 2px; }
+.mail-item:hover { background: #e8ecf4; }
+.mail-item.is-selected { background: var(--select); color: var(--select-ink); }
+.mail-item.is-unread .mail-from, .mail-item.is-unread .mail-subject { font-weight: bold; }
+.mail-from, .mail-subject, .mail-date { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mail-date { font-size: 11px; color: var(--muted); }
+.mail-item.is-selected .mail-date { color: inherit; }
+.mail-reader { overflow: auto; background: #fbfaf5; box-shadow: inset 1px 1px var(--face-lo), inset -1px -1px var(--face-hi); }
+.mail-head { padding: 12px 16px 8px; border-bottom: 1px solid #ddd; }
+.mail-head h2 { margin: 0 0 8px; font-size: 16px; }
+.mail-head dl { display: grid; grid-template-columns: 50px 1fr; gap: 2px 8px; margin: 0; font-size: 12px; }
+.mail-head dt { color: var(--muted); }
+.mail-head dd { margin: 0; }
+.mail-back { display: none; margin-bottom: 8px; }
+.mail-body { padding: 14px 16px; }
+@media (max-width: 760px) {
+  .mail { grid-template-columns: 1fr; }
+  .mail .mail-reader { display: none; }
+  .mail.is-reading .mail-list { display: none; }
+  .mail.is-reading .mail-reader { display: block; }
+  .mail-back { display: inline-block; }
+}
+
+/* Intruder chat */
+.chat { flex: 1; font-size: 19px; }
+.chat-msg { margin-bottom: 10px; }
+.chat-meta { color: var(--phosphor-dim); text-shadow: none; font-size: 0.8em; }
+.chat-text { color: var(--alert); white-space: pre-wrap; text-shadow: 0 0 4px var(--alert); }
+.chat-input { flex: 0 0 auto; height: auto; padding: 6px 18px; border-top: 1px solid var(--phosphor-faint); font-size: 16px; }
+
+/* Ending */
+.ending { position: fixed; inset: 0; z-index: 100; font-size: 22px; padding: 6vh max(24px, 10vw); }
+.ending-text { white-space: pre-wrap; }
+.ending-actions { margin-top: 20px; }
+.ending-btns { display: flex; gap: 10px; margin-top: 16px; }
+.ending-btns .btn { font: 18px "VT323", monospace; color: var(--phosphor); background: var(--crt-bg); box-shadow: none; border: 1px solid var(--phosphor); }
+@media (max-width: 760px) {
+  .doc-text { font-size: 13px; }
+  .doc-paper { padding: 16px 14px 22px; }
+  .scp-content { font-size: 14px; }
+  .scp-content .scp-image-block { float: none; max-width: 100%; margin: 10px 0; }
+}
