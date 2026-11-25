@@ -61,11 +61,7 @@ export class EventRunner {
       const today = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       if (today !== giorno) return false;
     }
-    if (ora) {
-      const [from, to] = ora.split('-').map((t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)));
-      const m = now.getHours() * 60 + now.getMinutes();
-      if (from <= to ? m < from || m > to : m < from && m > to) return false;
-    }
+    if (ora && !inTimeWindow(ora, now)) return false;
     return true;
   }
 
@@ -140,4 +136,11 @@ export class EventRunner {
     for (const t of this.timers.values()) clearTimeout(t);
     this.timers.clear();
   }
+}
+
+/** True when `now` falls inside an "HH:MM-HH:MM" window (windows may wrap past midnight). */
+export function inTimeWindow(ora: string, now = new Date()): boolean {
+  const [from, to] = ora.split('-').map((t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)));
+  const m = now.getHours() * 60 + now.getMinutes();
+  return from <= to ? m >= from && m <= to : m >= from || m <= to;
 }

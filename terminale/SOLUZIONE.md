@@ -99,7 +99,22 @@ al login finché non vi si accede una volta da «Altro utente…».
 | **Risposte alle email** — b.leone «(nessun oggetto)»: «Davide?» → intruso, «Non sei lui» → glitch; d.marino «Ordine 47»: «La registrazione è pronta» → avviso del 78%; a.costa «rispondimi» → **terzo finale** o glitch | Posta → Rispondi, o `rispondi <n> <opzione>` |
 | **Ora reale** — tra le 03:00 e le 03:10 «tutti i telefoni squillano»; il 3 marzo avviso di anniversario | automatico |
 | **Telecamere** — CAM-B1 e CAM-C3 (L0), mensa (L1), corridoio Est e sicurezza (L2), accesso Est e Camera 4 (L3), «CAM-??» dopo l'ordine di muratura | app Telecamere o `telecamere`. Il corridoio Est: la figura si avvicina a ogni ritorno; alla sesta volta raggiunge l'obiettivo |
-| **Fonoteca** — 15 voci, sbloccate leggendo i documenti di ciascuna; l'ultima («ospite — tu») solo con il terzo finale | app Fonoteca o `voci` |
+| **Fonoteca** — 16 voci, sbloccate leggendo i documenti di ciascuna; «ospite — tu» solo con il terzo finale | app Fonoteca o `voci` |
+
+## Easter egg: il Narratore
+
+Omaggio ad Amico Diverte (racconti horror).
+
+| Cosa | Dove |
+|---|---|
+| Comando nascosto (non compare in `help`) | `amicodiverte` |
+| Racconto horror n. 47, firmato «un amico che diverte» | `/pubblico/racconto-horror-047.txt` (L0) |
+| Radio «La notte dei racconti», **solo dalle 21:00 alle 05:00** (ora reale) | `radio 4,47` (L0; un dettaglio in più a L2) |
+| Fascicolo del soggetto di interesse SdI-47-N «Il Narratore» | `/archivio/sicurezza/soggetti-di-interesse/narratore.txt` (L1, si completa a L2 e L3) |
+| Voce n. 16 della Fonoteca, «Il Narratore» | dopo aver letto il fascicolo |
+| Telecamera CAM-P1 · Studio di registrazione (ON AIR, sedia che si gira) | app Telecamere (L1) |
+| Porta «Livello 0 — moquette gialla» (omaggio alle Backrooms) | `/archivio/tecnico/.planimetria-1987.txt` (L2) |
+| Il libro «Racconti Horror» sparito dalla saletta | `/pubblico/bacheca.txt` |
 
 ## Eventi
 

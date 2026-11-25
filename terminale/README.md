@@ -266,6 +266,7 @@ frequenza: 7.215         # MHz
 livello: 0
 nome: Frequenza morta
 dopo_evento: …           # facoltativo
+ora: 21:00-05:00         # facoltativo: in onda solo in questa fascia oraria
 ---
 Testo trasmesso (censura supportata).
 
@@ -281,8 +282,8 @@ Descrizione della voce.
 ---
 nome: CAM-E2 · Corridoio Ala Est
 livello: 2
-scena: corridoio         # corridoio | terminale | stanza | mensa | ingresso | camera4 | muro
-comportamento: avvicina  # avvicina | fermo | seduto | sedie | porta | telefono | segnale | muro
+scena: corridoio         # corridoio | terminale | stanza | mensa | ingresso | camera4 | muro | studio
+comportamento: avvicina  # avvicina | fermo | seduto | sedie | porta | telefono | segnale | muro | studio
 dopo_evento: …           # facoltativo
 ---
 Messaggi in sovrimpressione, uno per riga.
@@ -292,7 +293,7 @@ Comportamenti delle telecamere: `avvicina` (la figura in fondo è più vicina a 
 alla sesta volta raggiunge l'obiettivo), `fermo`, `seduto` (qualcuno al terminale, a volte
 un secondo in piedi dietro: se lo guardi sparisce), `sedie` (si girano verso l'obiettivo),
 `porta` (si apre da sola), `telefono`, `segnale` (nessun segnale, salvo qualche fotogramma),
-`muro` (impronte di mani dall'interno). Tutti i testi sono cifrati come il resto.
+`muro` (impronte di mani dall'interno), `studio` (ON AIR acceso, la sedia si gira verso il microfono). Tutti i testi sono cifrati come il resto.
 
 ### Censura progressiva
 
