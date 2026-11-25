@@ -2,6 +2,7 @@
 frequenza: 7.215
 livello: 0
 nome: Frequenza morta — 7,215 MHz
+audio: frequenza-morta.mp3
 ---
 …attenzione… attenzione… gruppi di numeri. chiave: rubrica, cognome.
 
