@@ -9,7 +9,10 @@ import { h, icon, isTouch } from './dom.ts';
 import { ICONS } from './icons.ts';
 import { ProfileStore, type Profile, type SavedWindow } from './profile.ts';
 import { WindowManager, type Win } from './wm.ts';
-import { nodeIcon } from './apps/explorer.ts';
+import { nodeIcon, showNodeProps } from './apps/explorer.ts';
+import { showContextMenu } from './contextmenu.ts';
+import { messageBox } from './dialog.ts';
+import { installScreensaver } from './screensaver.ts';
 import type { VNode } from '../engine/vfs.ts';
 
 export type AppContext = { session: Session; desktop: Desktop; win: Win };
@@ -39,6 +42,8 @@ export class Desktop {
   readonly root: HTMLElement;
   private readonly desk: HTMLElement;
   private readonly iconsEl: HTMLElement;
+  private readonly trayNet: HTMLElement;
+  private readonly trayVol: HTMLElement;
   private readonly tasksEl: HTMLElement;
   private readonly trayUser: HTMLElement;
   private readonly trayLevel: HTMLElement;
@@ -74,14 +79,56 @@ export class Desktop {
     this.trayLevel = h('span', { class: 'tray-level' });
     this.trayUser = h('span', { class: 'tray-user' });
     this.clock = h('span', { class: 'tray-clock' });
+    this.trayNet = h('span', { class: 'tray-ico tray-net', title: 'Rete: isolata (Protocollo CENERE). Nessuna connessione esterna.' }, icon(ICONS.netDown));
+    this.trayVol = h('button', { type: 'button', class: 'tray-ico tray-vol', onclick: () => this.toggleSound() });
     const startBtn = h(
       'button',
       { type: 'button', class: 'start-btn', 'aria-haspopup': 'menu', onclick: () => this.toggleMenu() },
       icon(ICONS.logo),
       h('span', {}, 'Start'),
     );
-    const taskbar = h('footer', { class: 'taskbar' }, startBtn, this.tasksEl, h('div', { class: 'tray' }, this.trayLevel, this.trayUser, this.clock));
+    const taskbar = h('footer', { class: 'taskbar' }, startBtn, this.tasksEl, h('div', { class: 'tray' }, this.trayNet, this.trayVol, this.trayLevel, this.trayUser, this.clock));
     this.root = h('div', { class: 'os', hidden: true }, this.desk, this.menu, taskbar);
+    this.desk.addEventListener('contextmenu', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.win')) return;
+      e.preventDefault();
+      const iconEl = target.closest<HTMLElement>('.desk-icon');
+      if (iconEl) return this.iconMenu(iconEl, e.clientX, e.clientY);
+      showContextMenu(e.clientX, e.clientY, [
+        { label: 'Aggiorna', action: () => this.renderIcons() },
+        { label: 'Riordina le icone', action: () => this.resetIcons() },
+        'sep',
+        { label: 'Apri Terminale', action: () => void this.open('terminal') },
+        { label: 'Sfondo del desktop…', action: () => void this.open('settings') },
+        'sep',
+        {
+          label: 'Proprietà',
+          action: () =>
+            messageBox(
+              this,
+              'Proprietà — Schermo',
+              `FONDAZIONE OS 4.7 (build 1999.11)\nPostazione: T-03, Ala Comunicazioni, Sito-47\nUtente: ${this.account.user}\nRete: isolata — Protocollo CENERE\nMemoria: 64 MB · Disco: 2,1 GB`,
+            ),
+        },
+      ]);
+    });
+    // Keyboard: Ctrl+Esc = Start, Ctrl+Alt+T = Terminale, Alt+\ (or Alt+") = next window.
+    document.addEventListener('keydown', (e) => {
+      if (this.root.hidden) return;
+      if (e.ctrlKey && e.key === 'Escape') {
+        e.preventDefault();
+        this.toggleMenu();
+      } else if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        void this.open('terminal');
+      } else if (e.altKey && (e.key === '\\' || e.code === 'Backquote')) {
+        e.preventDefault();
+        const wins = this.wm.list();
+        if (wins.length) this.wm.focus(wins[0]);
+      }
+    });
+    installScreensaver(this);
     mount.appendChild(this.root);
 
     document.addEventListener('pointerdown', (e) => {
@@ -395,6 +442,27 @@ export class Desktop {
       });
   }
 
+  /** A short-lived "program not responding" dialog, as during a real freeze. */
+  private notResponding(title: string) {
+    const win = this.wm.open({ app: 'dialog', title: `${title} (Non risponde)`, icon: ICONS.warning, size: [400, 170] });
+    const close = () => win.close();
+    win.body.append(
+      h(
+        'div',
+        { class: 'msgbox msgbox-warning' },
+        icon(ICONS.warning, 'ico ico-lg'),
+        h('p', { class: 'msgbox-text' }, `«${title}» non risponde.\nSe chiudi il programma, le informazioni non salvate andranno perse.`),
+      ),
+      h(
+        'div',
+        { class: 'btn-row msgbox-btns' },
+        h('button', { type: 'button', class: 'btn', onclick: close }, 'Attendi'),
+        h('button', { type: 'button', class: 'btn btn-default', onclick: close }, 'Chiudi programma'),
+      ),
+    );
+    setTimeout(close, 6000);
+  }
+
   private renderTasks() {
     this.tasksEl.replaceChildren(
       ...this.wm.list().map((w) =>
@@ -413,7 +481,33 @@ export class Desktop {
     );
   }
 
+  private iconMenu(el: HTMLElement, x: number, y: number) {
+    const key = el.dataset.key ?? '';
+    const open = () => el.dispatchEvent(new MouseEvent(isTouch() ? 'click' : 'dblclick', { bubbles: true }));
+    const items: Parameters<typeof showContextMenu>[2] = [{ label: 'Apri', action: open }];
+    if (key.startsWith('file:')) {
+      const path = key.slice(5);
+      items.push('sep', {
+        label: 'Proprietà',
+        action: () => void this.session.fs.stat(path, this.account).then((n) => n && showNodeProps(this, n)),
+      });
+    }
+    showContextMenu(x, y, items);
+  }
+
+  private toggleSound() {
+    const s = this.session;
+    s.state.settings.audio = !s.state.settings.audio;
+    s.sound.setEnabled(s.state.settings.audio);
+    s.store.save();
+    s.notify();
+    this.renderTray();
+  }
+
   private renderTray() {
+    const on = this.session.state.settings.audio;
+    this.trayVol.replaceChildren(icon(on ? ICONS.volOn : ICONS.volOff));
+    this.trayVol.title = on ? 'Suoni attivi (clic per disattivare)' : 'Suoni disattivati (clic per attivare)';
     const acc = this.account;
     const level = acc.level;
     this.trayLevel.className = `tray-level lvl-${level}`;
@@ -424,7 +518,8 @@ export class Desktop {
 
   private tickClock() {
     const now = new Date();
-    this.clock.textContent = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    // Now and then the clock shows the time of that night.
+    this.clock.textContent = Math.random() < 0.03 ? '03:05' : now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     this.clock.title = now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
@@ -507,6 +602,8 @@ export class Desktop {
   /** Full-screen glitch effect. */
   glitch(ms = 900): Promise<void> {
     document.body.classList.add('is-glitch');
+    const wins = this.wm.list().filter((w) => !w.minimized);
+    if (wins.length && Math.random() < 0.35) this.notResponding(wins[Math.floor(Math.random() * wins.length)].title);
     return new Promise((r) =>
       setTimeout(() => {
         document.body.classList.remove('is-glitch');

@@ -4,14 +4,16 @@
  */
 import { GUEST } from '../../engine/game.ts';
 import { dirname, type VNode } from '../../engine/vfs.ts';
-import type { AppContext, AppDef } from '../desktop.ts';
+import type { AppContext, AppDef, Desktop } from '../desktop.ts';
+import { showContextMenu } from '../contextmenu.ts';
 import { messageBox } from '../dialog.ts';
 import { h, icon, isTouch } from '../dom.ts';
 import { ICONS } from '../icons.ts';
 
 const PAGE = 200;
 
-type ExplorerState = { path: string; history: string[]; page: number };
+type SortKey = 'name' | 'type' | 'level' | 'size';
+type ExplorerState = { path: string; history: string[]; page: number; sort: SortKey; dir: 1 | -1 };
 
 export function nodeIcon(n: VNode) {
   if (n.kind === 'dir') return n.locked ? ICONS.folderLocked : ICONS.folder;
@@ -20,6 +22,29 @@ export function nodeIcon(n: VNode) {
   if (n.kind === 'image') return ICONS.image;
   if (n.kind === 'html') return ICONS.docHtml;
   return ICONS.doc;
+}
+
+/** "Proprietà" dialog for a file or folder. */
+export async function showNodeProps(desktop: Desktop, n: VNode) {
+  const acc = desktop.session.desktop;
+  const props = n.kind === 'dir' || n.locked || n.encrypted ? null : await desktop.session.fs.props?.(n.path, acc);
+  const lines = [
+    `Nome: ${n.name}`,
+    `Percorso: ${n.path}`,
+    `Tipo: ${n.label ?? typeLabel(n)}`,
+    `Livello di accesso: ${n.level}`,
+    ...(n.size !== undefined && n.kind !== 'dir' ? [`Dimensione: ${formatSize(n.size)}`] : []),
+    n.locked ? 'Autore: riservato' : n.encrypted ? 'Autore: cifrato' : props?.autore ? `Autore: ${props.autore}` : '',
+    props?.modificato ? `Ultima modifica: ${props.modificato}` : '',
+    n.hidden ? 'Attributi: nascosto' : '',
+  ].filter(Boolean);
+  messageBox(desktop, `Proprietà — ${n.name}`, lines.join('\n'));
+}
+
+export function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} byte`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1).replace('.', ',')} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
 }
 
 function typeLabel(n: VNode) {
@@ -48,7 +73,7 @@ export const explorerApp: AppDef = {
     const { session, desktop, win } = ctx;
     const acc = session.desktop;
     const home = acc.user === GUEST ? '/' : acc.homeOf(acc.user);
-    const st: ExplorerState = { path: (args as { path?: string } | undefined)?.path ?? home, history: [], page: 0 };
+    const st: ExplorerState = { path: (args as { path?: string } | undefined)?.path ?? home, history: [], page: 0, sort: 'name', dir: 1 };
 
     const back = h('button', { type: 'button', class: 'btn tool', title: 'Indietro', onclick: () => goBack() }, '◄');
     const up = h('button', { type: 'button', class: 'btn tool', title: 'Cartella superiore', onclick: () => navigate(dirname(st.path)) }, '▲');
@@ -61,11 +86,57 @@ export const explorerApp: AppDef = {
     const places = h('nav', { class: 'places', 'aria-label': 'Posizioni' });
     const list = h('div', { class: 'list files', role: 'listbox', tabindex: '0' });
     const status = h('div', { class: 'statusbar' });
+    const crumbs = h('nav', { class: 'crumbs', 'aria-label': 'Percorso' });
+    const header = h('div', { class: 'file-head' });
+    const pane = h('div', { class: 'files-pane' }, header, list);
     win.body.append(
       h('div', { class: 'toolbar' }, back, up, address, propsBtn),
-      h('div', { class: 'explorer' }, places, list),
+      crumbs,
+      h('div', { class: 'explorer' }, places, pane),
       status,
     );
+
+    const COLS: [SortKey, string][] = [['name', 'Nome'], ['type', 'Tipo'], ['size', 'Dimensione'], ['level', 'Livello']];
+    function renderHeader() {
+      header.replaceChildren(
+        ...COLS.map(([key, label]) =>
+          h(
+            'button',
+            {
+              type: 'button',
+              class: `file-col col-${key}${st.sort === key ? ' is-sorted' : ''}`,
+              onclick: () => {
+                st.dir = st.sort === key ? (st.dir === 1 ? -1 : 1) : 1;
+                st.sort = key;
+                void render();
+              },
+            },
+            label,
+            st.sort === key ? (st.dir === 1 ? ' ▲' : ' ▼') : '',
+          ),
+        ),
+      );
+    }
+    function renderCrumbs() {
+      const parts = st.path.split('/').filter(Boolean);
+      crumbs.replaceChildren(
+        h('button', { type: 'button', class: 'crumb', onclick: () => navigate('/') }, 'Risorse del computer'),
+        ...parts.flatMap((part, i) => [
+          h('span', { class: 'crumb-sep' }, '›'),
+          h('button', { type: 'button', class: 'crumb', onclick: () => navigate(`/${parts.slice(0, i + 1).join('/')}`) }, part),
+        ]),
+      );
+    }
+    function sorted(entries: VNode[]) {
+      const val = (n: VNode): string | number =>
+        st.sort === 'size' ? (n.size ?? -1) : st.sort === 'level' ? n.level : st.sort === 'type' ? (n.label ?? typeLabel(n)) : n.name.toLowerCase();
+      return [...entries].sort((a, b) => {
+        if ((a.kind === 'dir') !== (b.kind === 'dir')) return a.kind === 'dir' ? -1 : 1;
+        const x = val(a);
+        const y = val(b);
+        return (x < y ? -1 : x > y ? 1 : 0) * st.dir;
+      });
+    }
 
     const place = (label: string, path: string, svg: string) =>
       h('button', { type: 'button', class: 'place', onclick: () => navigate(path) }, icon(svg), h('span', {}, label));
@@ -81,6 +152,8 @@ export const explorerApp: AppDef = {
     async function render() {
       const my = ++token;
       address.value = st.path;
+      renderCrumbs();
+      renderHeader();
       win.setTitle(`Esplora risorse — ${st.path}`);
       win.args = { path: st.path };
       back.disabled = !st.history.length;
@@ -110,7 +183,7 @@ export const explorerApp: AppDef = {
         return;
       }
       if (my !== token) return;
-      const visible = res.entries.filter((e) => !e.hidden);
+      const visible = sorted(res.entries.filter((e) => !e.hidden));
       list.replaceChildren(
         ...(visible.length
           ? visible.map((n) => {
@@ -120,6 +193,7 @@ export const explorerApp: AppDef = {
                 icon(nodeIcon(n)),
                 h('span', { class: 'file-name' }, n.name),
                 h('span', { class: 'file-type' }, n.label ?? typeLabel(n)),
+                h('span', { class: 'file-size' }, n.kind === 'dir' || n.size === undefined ? '' : formatSize(n.size)),
                 h('span', { class: 'file-level' }, n.level ? `L${n.level}` : ''),
               );
               row.addEventListener(isTouch() ? 'click' : 'dblclick', () => activate(n));
@@ -130,8 +204,15 @@ export const explorerApp: AppDef = {
               });
               row.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
+                list.querySelectorAll('.is-selected').forEach((r) => r.classList.remove('is-selected'));
+                row.classList.add('is-selected');
                 selectedNode = n;
-                void showProps();
+                showContextMenu(e.clientX, e.clientY, [
+                  { label: n.kind === 'dir' ? 'Apri' : 'Apri', action: () => activate(n) },
+                  ...(n.kind !== 'dir' && !n.locked ? [{ label: 'Copia percorso', action: () => void navigator.clipboard?.writeText(n.path) }] : []),
+                  'sep',
+                  { label: 'Proprietà', action: () => void showNodeProps(desktop, n) },
+                ]);
               });
               row.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') activate(n);
@@ -158,17 +239,7 @@ export const explorerApp: AppDef = {
     async function showProps() {
       const n = selectedNode;
       if (!n) return messageBox(desktop, 'Proprietà', 'Seleziona prima un file o una cartella.');
-      const props = n.kind === 'dir' || n.locked || n.encrypted ? null : await session.fs.props(n.path, acc);
-      const lines = [
-        `Nome: ${n.name}`,
-        `Percorso: ${n.path}`,
-        `Tipo: ${n.label ?? typeLabel(n)}`,
-        `Livello di accesso: ${n.level}`,
-        ...(n.size !== undefined && n.kind !== 'dir' ? [`Dimensione: ${n.size} byte`] : []),
-        n.locked ? 'Autore: riservato' : n.encrypted ? 'Autore: cifrato' : props?.autore ? `Autore: ${props.autore}` : '',
-        props?.modificato ? `Ultima modifica: ${props.modificato}` : '',
-      ].filter(Boolean);
-      messageBox(desktop, `Proprietà — ${n.name}`, lines.join('\n'));
+      await showNodeProps(desktop, n);
     }
 
     function setPage(p: number) {

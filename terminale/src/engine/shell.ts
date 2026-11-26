@@ -35,6 +35,7 @@ export type ShellHost = {
 const ORDER = [
   'help', 'aiuto', 'taccuino', 'incarico', 'login', 'logout', 'whoami', 'ls', 'cd', 'pwd', 'cat', 'stat', 'open', 'search', 'decrypt',
   'ripara', 'unisci', 'mail', 'rispondi', 'rete', 'connetti', 'radio', 'voci', 'telecamere',
+  'ps', 'who', 'uptime', 'ping',
   'clear', 'audio', 'tema', 'salto', 'crediti', 'reset', 'exit',
 ];
 
@@ -211,6 +212,58 @@ export class Shell {
           this.cwd = '/';
           this.host.userChanged?.(this.account);
           await t.echo(`Sessione di ${was} chiusa. Utente corrente: ${GUEST}.`, 'dim');
+        },
+      },
+      ps: {
+        usage: 'ps',
+        help: 'processi in esecuzione',
+        run: () => {
+          const me = this.account.user;
+          const rows: Line[] = [
+            { text: '  PID  UTENTE      ORA    COMANDO', cls: 'dim' },
+            { text: '    1  sistema    00:00  init' },
+            { text: '  118  sistema    00:00  netd --isolato (CENERE)' },
+            { text: '  231  m.ferri    04:31  t09-registra --linea 4 --out cp47   [zombie]', cls: 'warn' },
+            { text: `  ${String(400 + me.length).padStart(3)}  ${me.padEnd(10)} adesso shell` },
+            { text: '    4  ???        03:05  ascolta /dev/linea4', cls: 'err' },
+          ];
+          return t.echo(rows);
+        },
+      },
+      who: {
+        usage: 'who',
+        help: 'utenti collegati a questa postazione',
+        run: () => {
+          const users = [...new Set(this.session.openAccounts().map((a) => a.user))];
+          return t.echo([
+            ...users.map((u) => ({ text: `${u.padEnd(12)} T-03     ${u === 'ospite' ? 'linea di manutenzione' : 'console'}` })),
+            { text: `${'—'.padEnd(12)} linea4   dal 03/03/2026 03:05`, cls: 'err' },
+          ]);
+        },
+      },
+      uptime: {
+        usage: 'uptime',
+        help: 'da quanto è acceso il sistema',
+        run: () => {
+          const since = new Date('2026-03-03T03:05:00');
+          const days = Math.max(0, Math.floor((Date.now() - since.getTime()) / 86_400_000));
+          return t.echo(`acceso da ${days} giorni (dal 03/03/2026 03:05) · 2 utenti · carico: 0,47 0,47 0,47`);
+        },
+      },
+      ping: {
+        usage: 'ping <host>',
+        help: 'prova la connessione verso un host',
+        run: async ([host]) => {
+          if (!host) return t.echo('Uso: ping <host>', 'err');
+          await t.print(`PING ${host}: 56 byte di dati`, { cps: 200 });
+          const internal = /^(t-?0?\d|lab-02|sicurezza-01|localhost|t03)$/i.test(host);
+          for (let i = 1; i <= 3; i++) {
+            await new Promise((r) => setTimeout(r, 700));
+            if (internal) await t.echo(`64 byte da ${host}: seq=${i} tempo=${(3 + Math.random() * 4).toFixed(1)} ms`);
+            else await t.echo(`Richiesta scaduta (seq=${i}) — rete esterna isolata`, 'warn');
+          }
+          if (/^(linea|4$|camera)/i.test(host)) return t.echo('…qualcuno ha risposto. Non dovrebbe esserci nessuno.', 'err');
+          return t.echo(internal ? '3 pacchetti trasmessi, 3 ricevuti' : '3 pacchetti trasmessi, 0 ricevuti, 100% persi', 'dim');
         },
       },
       whoami: {
