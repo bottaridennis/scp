@@ -10,6 +10,18 @@ import { ICONS } from '../icons.ts';
 const W = 320;
 const H = 180;
 
+/** Photos used as backgrounds, loaded once. */
+const photos = new Map<string, HTMLImageElement>();
+function photo(file: string): HTMLImageElement | null {
+  let img = photos.get(file);
+  if (!img) {
+    img = new Image();
+    img.src = `${import.meta.env.BASE_URL}telecamere/${file}`;
+    photos.set(file, img);
+  }
+  return img.complete && img.naturalWidth ? img : null;
+}
+
 /** Per-camera memory that survives switching feeds (the figure that comes closer…). */
 const memory = new Map<string, { visits: number; seen: number }>();
 
@@ -382,7 +394,9 @@ export const camerasApp: AppDef = {
       }
       const mem = memory.get(cam.id)!;
 
-      switch (cam.scena) {
+      const bg = cam.foto ? photo(cam.foto) : null;
+      if (bg) g.drawImage(bg, 0, 0, W, H);
+      else switch (cam.scena) {
         case 'corridoio':
           corridor(g);
           break;
@@ -429,6 +443,13 @@ export const camerasApp: AppDef = {
           break;
         }
         case 'sedie': {
+          if (bg) {
+            // on a real photo: people sitting at the tables, one more every 20 seconds, all facing the lens
+            const seatedN = Math.min(6, 1 + Math.floor(t / 20) + mem.visits);
+            const spots = [[70, 128], [128, 120], [196, 122], [250, 130], [100, 146], [222, 148]];
+            for (let i = 0; i < seatedN; i++) seated(g, spots[i][0], spots[i][1]);
+            break;
+          }
           // chairs turned towards the lens; one more turns every 20 seconds
           const turned = Math.min(8, 4 + Math.floor(t / 20) + mem.visits);
           for (let i = 0; i < 8; i++) {

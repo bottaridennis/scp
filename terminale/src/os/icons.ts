@@ -1,4 +1,5 @@
 /** 16×16 pixel-style icons (currentColor where it makes sense). */
+import { TANGO } from './icons-tango.ts';
 const svg = (body: string, vb = '0 0 16 16') =>
   `<svg viewBox="${vb}" width="16" height="16" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
 
@@ -33,5 +34,8 @@ export const ICONS = {
   order: svg('<path d="M3 1h10v14H3z" fill="#f4f1e6" stroke="#555"/><rect x="5" y="3" width="6" height="2" fill="#7a1f1f"/><path d="M5 7h6M5 9h6M5 11h4" stroke="#888"/>'),
   swap: svg('<path d="M2 5h10l-2.5-2.5M14 11H4l2.5 2.5" fill="none" stroke="#333" stroke-width="1.6"/>'),
 };
+
+// Tango icons (public domain) replace the hand-drawn ones where available.
+Object.assign(ICONS, TANGO);
 
 export type IconName = keyof typeof ICONS;

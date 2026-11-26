@@ -725,3 +725,6 @@ button.tray-ico { cursor: pointer; }
 
 /* Staple on game documents */
 .doc-paper::before { content: ""; position: absolute; top: 10px; left: 14px; width: 22px; height: 4px; border-radius: 1px; background: linear-gradient(#cfd3d6, #8b9095); box-shadow: 0 1px 1px rgb(0 0 0 / 0.35); transform: rotate(-8deg); }
+
+/* Bitmap (Tango) icons */
+.ico img, .desk-icon-img img { width: 100%; height: 100%; display: block; object-fit: contain; }

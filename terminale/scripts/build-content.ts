@@ -548,6 +548,7 @@ export async function buildContent(opts: { quiet?: boolean } = {}): Promise<void
       l: level,
       scena: String(front.scena),
       comportamento: String(front.comportamento),
+      ...(front.foto ? { foto: photoFile(String(front.foto), where) } : {}),
       ...(v ? { v } : {}),
       ...(await sealLevel({ messaggi }, level, where, body)),
     });
@@ -656,4 +657,11 @@ function audioField(value: unknown, where: string): { a?: string } {
   if (!/^[\w.-]+\.mp3$/.test(file)) throw new ContentError(`${where}: audio "${file}" non valido`);
   if (!existsSync(path.join(ROOT, 'public', 'audio', file))) throw new ContentError(`${where}: public/audio/${file} non esiste`);
   return { a: file };
+}
+
+/** `foto: name.jpg` on a camera: a processed photo in public/telecamere/. */
+function photoFile(file: string, where: string): string {
+  if (!/^[\w.-]+\.(jpg|png|webp)$/.test(file)) throw new ContentError(`${where}: foto "${file}" non valida`);
+  if (!existsSync(path.join(ROOT, 'public', 'telecamere', file))) throw new ContentError(`${where}: public/telecamere/${file} non esiste`);
+  return file;
 }
