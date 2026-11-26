@@ -194,6 +194,8 @@ export type CameraEntry = {
   scena: string;
   /** Scripted behaviour. */
   comportamento: string;
+  /** Real photo in public/telecamere/ used as background (the scene is drawn otherwise). */
+  foto?: string;
   /** Only visible after this event. */
   v?: string;
   b: Sealed<CameraPayload>;

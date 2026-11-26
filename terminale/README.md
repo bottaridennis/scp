@@ -402,6 +402,23 @@ Il `base` di Vite si imposta con `BASE_PATH` (predefinito `/scp/terminale/`; in
 il sito principale, poi il gioco con `BASE_PATH=/<repo>/terminale/`, e lo copia in
 `dist/terminale/`.
 
+## Immagini e icone
+
+Foto da Wikimedia Commons, rielaborate per il gioco (bianco e nero, grana, viraggio seppia). Ogni foto resta sotto la propria licenza:
+
+| Foto | Autore | Licenza | Uso |
+|---|---|---|---|
+| [Corridor, Raigmore Emergency Bunker - geograph.org.uk - 6258049.jpg](https://commons.wikimedia.org/wiki/File:Corridor,_Raigmore_Emergency_Bunker_-_geograph.org.uk_-_6258049.jpg) | Craig Wallace | CC BY-SA 2.0 | telecamera CAM-E2, sfondo «Corridoio Ala Est» |
+| [Blast doors at the bunker entrance - geograph.org.uk - 3387738.jpg](https://commons.wikimedia.org/wiki/File:Blast_doors_at_the_bunker_entrance_-_geograph.org.uk_-_3387738.jpg) | Jim Barton | CC BY-SA 2.0 | telecamera CAM-B1 |
+| [Fort «Furggels» - Officers Canteen (5048315625).jpg](https://commons.wikimedia.org/wiki/File:Fort_%C2%ABFurggels%C2%BB_-_Officers_Canteen_(5048315625).jpg) | Kecko | CC BY 2.0 | telecamera CAM-M1 |
+| [Radio-frequency-anechoic-chamber-HDR-0a.jpg](https://commons.wikimedia.org/wiki/File:Radio-frequency-anechoic-chamber-HDR-0a.jpg) | Adamantios | CC BY-SA 3.0 | telecamera CAM-04 |
+| [Amershm Bunker Corridor.jpg](https://commons.wikimedia.org/wiki/File:Amershm_Bunker_Corridor.jpg) | ElevonicMedia | CC BY-SA 4.0 | telecamera CAM-E1 |
+| [FDA Bldg 62 - Anechoic Chamber (5160771795).jpg](https://commons.wikimedia.org/wiki/File:FDA_Bldg_62_-_Anechoic_Chamber_(5160771795).jpg) | The U.S. Food and Drug Administration | Public domain | /archivio/tecnico/camera-4-1988.jpg |
+| [Bunker Soratte atombunker blast door est.jpg](https://commons.wikimedia.org/wiki/File:Bunker_Soratte_atombunker_blast_door_est.jpg) | Gregory paolucci | CC BY-SA 4.0 | /archivio/tecnico/ingresso-est.jpg, sfondo «Ingresso del sito» |
+| [Fort «Furggels» - Officers Canteen (5048390273).jpg](https://commons.wikimedia.org/wiki/File:Fort_%C2%ABFurggels%C2%BB_-_Officers_Canteen_(5048390273).jpg) | Kecko | CC BY 2.0 | /archivio/storico/mensa-1994.jpg |
+
+Icone: [Tango Desktop Project](http://tango.freedesktop.org), pubblico dominio (`src/os/icons-tango.ts`).
+
 ## Licenze
 
 Il gioco è ambientato nell'universo della Fondazione SCP (SCP Wiki,

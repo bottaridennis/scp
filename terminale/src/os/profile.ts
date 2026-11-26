@@ -48,4 +48,6 @@ export const WALLPAPERS: Record<string, string> = {
   griglia: 'Griglia tecnica',
   notte: 'Turno di notte',
   tinta: 'Grigio istituzionale',
+  bunker: 'Ingresso del sito (foto)',
+  corridoio: 'Corridoio Ala Est (foto)',
 };
