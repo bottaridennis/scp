@@ -37,6 +37,9 @@ export type AppDef = {
   badge?: (session: Session) => string;
 };
 
+/** Wallpapers that are photos (public/sfondi/), darkened so icons stay readable. */
+const PHOTO_WALLPAPERS: Record<string, string> = { bunker: 'bunker.jpg', corridoio: 'corridoio.jpg' };
+
 export class Desktop {
   readonly session: Session;
   readonly root: HTMLElement;
@@ -216,6 +219,10 @@ export class Desktop {
 
   setWallpaper(name: string, persist = true) {
     this.desk.className = `desk wall-${name}`;
+    const photo = PHOTO_WALLPAPERS[name];
+    this.desk.style.backgroundImage = photo
+      ? `linear-gradient(rgb(10 16 18 / 0.55), rgb(10 16 18 / 0.75)), url("${import.meta.env.BASE_URL}sfondi/${photo}")`
+      : '';
     if (this.profile && persist) {
       this.profile.wallpaper = name;
       this.save();

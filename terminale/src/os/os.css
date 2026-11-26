@@ -728,3 +728,5 @@ button.tray-ico { cursor: pointer; }
 
 /* Bitmap (Tango) icons */
 .ico img, .desk-icon-img img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.wall-bunker, .wall-corridoio { background-color: #1a2224; background-size: cover; background-position: center; }
+.wall-bunker .desk-mark, .wall-corridoio .desk-mark { color: rgb(255 255 255 / 0.06); }
