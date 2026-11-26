@@ -3,6 +3,7 @@ nome: CAM-B1 · Ingresso B
 livello: 0
 scena: ingresso
 comportamento: porta
+foto: ingresso-b.jpg
 ---
 INGRESSO B: CHIUSO DALL'ESTERNO IL 03/03/2026 04:52
 MOVIMENTO RILEVATO

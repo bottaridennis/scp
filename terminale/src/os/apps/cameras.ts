@@ -447,7 +447,11 @@ export const camerasApp: AppDef = {
             // on a real photo: people sitting at the tables, one more every 20 seconds, all facing the lens
             const seatedN = Math.min(6, 1 + Math.floor(t / 20) + mem.visits);
             const spots = [[70, 128], [128, 120], [196, 122], [250, 130], [100, 146], [222, 148]];
+            g.save();
+            g.globalAlpha = 0.72;
+            g.filter = 'blur(1.2px)';
             for (let i = 0; i < seatedN; i++) seated(g, spots[i][0], spots[i][1]);
+            g.restore();
             break;
           }
           // chairs turned towards the lens; one more turns every 20 seconds
